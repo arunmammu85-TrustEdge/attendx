@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendX — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0d12; --surface: #111620; --surface2: #161d2a; --border: #1e2a3a;
+  --accent: #00e5a0; --accent2: #3b82f6; --accent3: #f59e0b; --danger: #ef4444;
+  --text: #e8edf5; --muted: #5a6a7e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Instrument Sans',sans-serif; min-height:100vh; }
+body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: linear-gradient(rgba(0,229,160,0.02) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,160,0.02) 1px,transparent 1px);
+  background-size:40px 40px; }
+
+/* ── PIN OVERLAY ─────────────────────────────────────────────────────────── */
+#pinOverlay {
+  position:fixed; inset:0; z-index:999;
+  background:rgba(10,13,18,0.97); backdrop-filter:blur(20px);
+  display:flex; align-items:center; justify-content:center;
+}
+.pin-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:20px;
+  padding:2.5rem; width:340px; text-align:center;
+  box-shadow:0 0 60px rgba(0,229,160,0.1);
+}
+.pin-icon { font-size:2.5rem; margin-bottom:1rem; }
+.pin-title { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; margin-bottom:0.25rem; }
+.pin-sub { color:var(--muted); font-size:0.82rem; font-family:'DM Mono',monospace; margin-bottom:1.5rem; }
+.pin-dots { display:flex; justify-content:center; gap:0.75rem; margin-bottom:1.5rem; }
+.pin-dot { width:14px; height:14px; border-radius:50%; border:2px solid var(--border); transition:all 0.2s; }
+.pin-dot.filled { background:var(--accent); border-color:var(--accent); box-shadow:0 0 8px rgba(0,229,160,0.5); }
+.pin-dot.error { background:var(--danger); border-color:var(--danger); animation:shake 0.4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.pin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; margin-bottom:1rem; }
+.pin-key {
+  padding:1rem; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface2); font-family:'Syne',sans-serif; font-size:1.1rem;
+  font-weight:700; cursor:pointer; color:var(--text); transition:all 0.15s;
+}
+.pin-key:hover { border-color:var(--accent); background:rgba(0,229,160,0.08); color:var(--accent); }
+.pin-key:active { transform:scale(0.95); }
+.pin-key.del { color:var(--danger); font-size:0.9rem; }
+.pin-key.zero { grid-column:2; }
+.pin-hint { font-size:0.72rem; color:var(--muted); font-family:'DM Mono',monospace; margin-top:0.5rem; }
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(10,13,18,0.9); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border); padding:0 2rem; height:64px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+.logo span { color:var(--accent); }
+.nav-tabs { display:flex; gap:0.25rem; background:var(--surface); border-radius:10px; padding:4px; }
+.nav-tab { padding:0.4rem 1rem; border-radius:7px; font-size:0.82rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--muted); transition:all 0.2s; font-family:'Instrument Sans',sans-serif; }
+.nav-tab.active { background:var(--surface2); color:var(--text); }
+.admin-badge { background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--accent3); font-family:'DM Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:20px; }
+.logout-btn { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--danger); font-family:'DM Mono',monospace; font-size:0.72rem; padding:5px 12px; border-radius:8px; cursor:pointer; transition:all 0.2s; }
+.logout-btn:hover { background:rgba(239,68,68,0.2); }
+
+/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+.container { max-width:1300px; margin:0 auto; padding:2rem; position:relative; z-index:1; }
+.page { display:none; }
+.page.active { display:block; animation:fadeUp 0.3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+.page-title { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; letter-spacing:-0.03em; }
+.page-sub { color:var(--muted); font-size:0.82rem; font-family:'DM Mono',monospace; margin-top:0.25rem; }
+.page-header { display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; }
+
+/* ── CARD ────────────────────────────────────────────────────────────────── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.5rem; }
+.card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+.dot.blue { background:var(--accent2); } .dot.amber { background:var(--accent3); } .dot.red { background:var(--danger); }
+
+/* ── FORM ────────────────────────────────────────────────────────────────── */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.form-row { display:flex; flex-direction:column; gap:0.35rem; }
+.form-row.full { grid-column:1/-1; }
+label { font-size:0.72rem; color:var(--muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; }
+input, select {
+  background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+  color:var(--text); padding:0.65rem 0.85rem; font-size:0.875rem;
+  font-family:'Instrument Sans',sans-serif; outline:none; transition:border-color 0.2s; width:100%;
+}
+input:focus, select:focus { border-color:var(--accent); }
+input::placeholder { color:var(--muted); }
+select option { background:var(--surface2); }
+
+/* ── BUTTONS ─────────────────────────────────────────────────────────────── */
+.btn { padding:0.7rem 1.25rem; border-radius:9px; border:none; font-family:'Syne',sans-serif; font-weight:700; font-size:0.85rem; cursor:pointer; transition:all 0.2s; }
+.btn-primary { background:linear-gradient(135deg,var(--accent),#00b87a); color:#000; box-shadow:0 4px 16px rgba(0,229,160,0.25); }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,229,160,0.35); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.btn-secondary { background:var(--surface2); border:1px solid var(--border); color:var(--text); }
+.btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+.btn-danger { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:var(--danger); }
+.btn-danger:hover { background:rgba(239,68,68,0.2); }
+.btn-sm { padding:0.4rem 0.85rem; font-size:0.78rem; }
+.btn-export { background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); color:var(--accent2); }
+.btn-export:hover { background:rgba(59,130,246,0.2); }
+
+/* ── TABLE ───────────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th { font-family:'DM Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); padding:0.75rem 1rem; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:0.85rem 1rem; border-bottom:1px solid rgba(30,42,58,0.5); font-size:0.85rem; }
+tr:hover td { background:rgba(255,255,255,0.02); }
+.emp-avatar { width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:700; flex-shrink:0; }
+.status-pill { display:inline-flex; align-items:center; gap:0.3rem; padding:3px 9px; border-radius:20px; font-size:0.7rem; font-weight:600; font-family:'DM Mono',monospace; }
+.pill-active { background:rgba(0,229,160,0.12); color:var(--accent); }
+.pill-inactive { background:rgba(239,68,68,0.12); color:var(--danger); }
+.pill-present { background:rgba(0,229,160,0.12); color:var(--accent); }
+.pill-late { background:rgba(245,158,11,0.12); color:var(--accent3); }
+.pill-absent { background:rgba(239,68,68,0.12); color:var(--danger); }
+
+/* ── STATS ───────────────────────────────────────────────────────────────── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.25rem; position:relative; overflow:hidden; }
+.stat-card::before { content:''; position:absolute; top:-20px; right:-20px; width:70px; height:70px; border-radius:50%; background:radial-gradient(circle,var(--c,rgba(0,229,160,0.12)),transparent 70%); }
+.stat-card:nth-child(2)::before{--c:rgba(59,130,246,0.12)} .stat-card:nth-child(3)::before{--c:rgba(245,158,11,0.12)} .stat-card:nth-child(4)::before{--c:rgba(239,68,68,0.12)}
+.stat-label { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+.stat-value { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; margin:0.35rem 0 0.2rem; }
+.stat-sub { font-size:0.72rem; color:var(--muted); }
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+.modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); display:none; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:2rem; width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+.modal-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+.modal-close { background:none; border:none; color:var(--muted); font-size:1.3rem; cursor:pointer; padding:0.25rem; }
+.modal-close:hover { color:var(--text); }
+
+/* ── SEARCH ──────────────────────────────────────────────────────────────── */
+.search-bar { display:flex; gap:0.75rem; flex-wrap:wrap; }
+.search-input { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:0.6rem 0.85rem; font-size:0.85rem; font-family:'Instrument Sans',sans-serif; outline:none; width:220px; }
+.search-input:focus { border-color:var(--accent); }
+
+/* ── TOAST ───────────────────────────────────────────────────────────────── */
+.toast { position:fixed; bottom:2rem; right:2rem; z-index:999; background:var(--surface); border:1px solid var(--accent); border-radius:12px; padding:1rem 1.5rem; display:flex; align-items:center; gap:0.75rem; font-size:0.875rem; box-shadow:0 8px 32px rgba(0,229,160,0.2); transform:translateY(100px); opacity:0; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1); max-width:340px; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.err { border-color:var(--danger); box-shadow:0 8px 32px rgba(239,68,68,0.2); }
+
+/* ── PROGRESS ────────────────────────────────────────────────────────────── */
+.progress-bar { height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; margin-top:0.4rem; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:3px; transition:width 0.5s ease; }
+
+@media(max-width:768px) {
+  .stats-row { grid-template-columns:1fr 1fr; }
+  .form-grid { grid-template-columns:1fr; }
+  .page-header { flex-direction:column; align-items:flex-start; }
+}
+
+.toggle { width:44px; height:24px; border-radius:12px; background:var(--border); position:relative; cursor:pointer; transition:background 0.2s; border:none; }
+.toggle.on { background:var(--accent); }
+.toggle::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:3px; left:3px; transition:left 0.2s; }
+.toggle.on::after { left:23px; }
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ════════════════════════════════════════════════════════════════ -->
+<nav>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <div class="logo">Attend<span>X</span> <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ Admin</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('employees',this)">👥 Employees</button>
+    <button class="nav-tab" onclick="showPage('addemp',this)">➕ Add Employee</button>
+    <button class="nav-tab" onclick="showPage('enrollment',this)">📷 Face Enrollment</button>
+    <button class="nav-tab" onclick="showPage('attendance',this)">📋 Attendance</button>
+    <button class="nav-tab" onclick="showPage('reports',this)">📈 Reports</button>
+    <button class="nav-tab" onclick="showPage('pinsettings',this)">⚙️ Settings</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <span class="admin-badge">🛡 ADMIN</span>
+    <button class="logout-btn" onclick="logout()">⏻ Lock</button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ══ DASHBOARD PAGE ══════════════════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="adminGreet">Dashboard</div>
+      <div class="page-sub" id="dashDateSub">// Live attendance overview</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">↺ Refresh</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Present Today</div>
+      <div class="stat-value" id="dPresent" style="color:var(--accent)">—</div>
+      <div class="stat-sub" id="dPresentSub">Loading…</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Absent</div>
+      <div class="stat-value" id="dAbsent" style="color:var(--danger)">—</div>
+      <div class="stat-sub">Not punched in</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Late Arrivals</div>
+      <div class="stat-value" id="dLate" style="color:var(--accent3)">—</div>
+      <div class="stat-sub">After grace period</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Employees</div>
+      <div class="stat-value" id="dTotal" style="color:var(--accent2)">—</div>
+      <div class="stat-sub">Active staff</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+    <!-- LIVE FEED -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Live Activity Feed</div>
+      <div id="liveFeed" style="display:flex;flex-direction:column;gap:0">
+        <div style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace;font-size:0.8rem">Loading feed…</div>
+      </div>
+    </div>
+
+    <!-- TODAY SUMMARY -->
+    <div class="card">
+      <div class="card-title"><span class="dot blue"></span>Today At a Glance</div>
+      <div id="glanceList" style="display:flex;flex-direction:column;gap:0.5rem">
+        <div style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace;font-size:0.8rem">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EMPLOYEES PAGE ══════════════════════════════════════════════════════ -->
+<div class="page" id="page-employees">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Employees</div>
+      <div class="page-sub">// Manage employee records · <span id="empCount">0</span> total</div>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+      <input class="search-input" placeholder="🔍 Search name or code…" oninput="filterEmployees(this.value)">
+      <select id="deptFilter" onchange="filterEmployees(document.querySelector('.search-input').value)" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
+        <option value="">All Departments</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add Employee</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Employees</div>
+      <div class="stat-value" id="statTotal" style="color:var(--accent)">0</div>
+      <div class="stat-sub">Active staff</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Present Today</div>
+      <div class="stat-value" id="statPresent" style="color:var(--accent2)">0</div>
+      <div class="stat-sub">Punched in</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Enrolled Faces</div>
+      <div class="stat-value" id="statEnrolled" style="color:var(--accent3)">0</div>
+      <div class="stat-sub">Biometric ready</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Departments</div>
+      <div class="stat-value" id="statDepts" style="color:var(--danger)">0</div>
+      <div class="stat-sub">Active depts</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Code</th>
+            <th>Department</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Shift</th>
+            <th>Face</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="empTable">
+          <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Loading employees…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ ADD EMPLOYEE PAGE ═══════════════════════════════════════════════════ -->
+<div class="page" id="page-addemp">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Add Employee</div>
+      <div class="page-sub">// Create new employee record · Face enrollment can be done later</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1.5rem;align-items:start">
+
+    <!-- FORM -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Employee Details</div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Employee Code *</label>
+          <input type="text" id="ae_code" placeholder="EMP001">
+        </div>
+        <div class="form-row">
+          <label>Full Name *</label>
+          <input type="text" id="ae_name" placeholder="Arjun Mehta">
+        </div>
+        <div class="form-row">
+          <label>Email <span style="color:var(--muted);font-size:0.65rem">(optional)</span></label>
+          <input type="email" id="ae_email" placeholder="arjun@company.com">
+        </div>
+        <div class="form-row">
+          <label>Phone</label>
+          <input type="text" id="ae_phone" placeholder="9876543210">
+        </div>
+        <div class="form-row">
+          <label>Department</label>
+          <select id="ae_dept">
+            <option value="">Select department…</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Role</label>
+          <select id="ae_role">
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Shift Start</label>
+          <input type="time" id="ae_start" value="09:00">
+        </div>
+        <div class="form-row">
+          <label>Shift End</label>
+          <input type="time" id="ae_end" value="18:00">
+        </div>
+        <div class="form-row full" style="margin-top:0.5rem">
+          <button class="btn btn-primary" id="ae_saveBtn" onclick="addEmployee()" style="width:100%">
+            💾 Add Employee
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSTRUCTIONS + RECENTLY ADDED -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem">
+      <div class="card">
+        <div class="card-title"><span class="dot amber"></span>What happens next?</div>
+        <div style="display:flex;flex-direction:column;gap:0.85rem">
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.3);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--accent);flex-shrink:0">1</div>
+            <div style="font-size:0.83rem"><strong>Employee is created</strong> in the database with a unique ID</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.3);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--accent);flex-shrink:0">2</div>
+            <div style="font-size:0.83rem">Status shows <span style="color:var(--accent3);font-family:'DM Mono',monospace;font-size:0.78rem">Enroll Pending</span> until face is registered</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.3);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--accent);flex-shrink:0">3</div>
+            <div style="font-size:0.83rem">Go to <strong>Face Enrollment</strong> tab and register their face</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;align-items:flex-start">
+            <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.3);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:700;color:var(--accent);flex-shrink:0">4</div>
+            <div style="font-size:0.83rem">Employee can now <strong>punch in/out</strong> using face recognition</div>
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn btn-secondary" style="width:100%" onclick="document.querySelector('[onclick*=enrollment]').click()">
+            📷 Go to Face Enrollment →
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="dot blue"></span>Recently Added</div>
+        <div id="recentlyAdded" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">
+          No employees added this session
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FACE ENROLLMENT PAGE ════════════════════════════════════════════════ -->
+<div class="page" id="page-enrollment">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Face Enrollment</div>
+      <div class="page-sub">// Register employee faces for biometric attendance</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="loadEnrollmentList()">↺ Refresh</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+    <!-- LEFT: EMPLOYEE LIST WITH STATUS -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+        <div class="card-title" style="margin:0"><span class="dot"></span>Employees</div>
+        <div style="display:flex;gap:0.5rem">
+          <button id="filterAll" class="btn btn-secondary btn-sm" onclick="filterEnrollList('all',this)" style="border-color:var(--accent);color:var(--accent)">All</button>
+          <button id="filterPending" class="btn btn-secondary btn-sm" onclick="filterEnrollList('pending',this)">⏳ Pending</button>
+          <button id="filterDone" class="btn btn-secondary btn-sm" onclick="filterEnrollList('done',this)">✓ Done</button>
+        </div>
+      </div>
+
+      <!-- PROGRESS BAR -->
+      <div style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:0.3rem">
+          <span>Enrollment Progress</span>
+          <span id="enrollProgress">0 / 0 enrolled</span>
+        </div>
+        <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+          <div id="enrollProgressBar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;width:0%;transition:width 0.6s ease"></div>
+        </div>
+      </div>
+
+      <div id="enrollEmpList" style="display:flex;flex-direction:column;gap:0.4rem;max-height:420px;overflow-y:auto">
+        <div style="text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.8rem">Loading…</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: ENROLLMENT PANEL -->
+    <div class="card">
+      <div class="card-title"><span class="dot blue"></span>Enrollment Camera</div>
+
+      <!-- No selection state -->
+      <div id="enrollNoSel" style="text-align:center;padding:2rem 0;color:var(--muted)">
+        <div style="font-size:2.5rem;margin-bottom:0.5rem">👈</div>
+        <div style="font-family:'DM Mono',monospace;font-size:0.8rem">Select an employee from the list to enroll</div>
+      </div>
+
+      <!-- Enrollment panel (shown when employee selected) -->
+      <div id="enrollPanel" style="display:none">
+        <!-- Selected employee info -->
+        <div style="display:flex;align-items:center;gap:0.85rem;background:var(--surface2);border-radius:10px;padding:0.85rem;margin-bottom:1rem">
+          <div id="epAvatar" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div id="epName" style="font-weight:600;font-size:0.9rem"></div>
+            <div id="epCode" style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted)"></div>
+          </div>
+          <div id="epStatus" style="font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px"></div>
+        </div>
+
+        <!-- Webcam -->
+        <div id="epCamBox" style="position:relative;border-radius:11px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
+          <video id="epVideo" autoplay muted playsinline style="width:100%;max-height:180px;object-fit:cover;transform:scaleX(-1);display:block"></video>
+          <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
+            <div style="width:90px;height:110px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
+            <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+          </div>
+          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.35rem 0.7rem;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent)">● LIVE · Look straight at camera</div>
+        </div>
+
+        <!-- Camera error -->
+        <div id="epCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:9px;padding:0.85rem;text-align:center;margin-bottom:0.75rem">
+          <div id="epCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.5rem;line-height:1.5"></div>
+          <button onclick="startEpCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
+        </div>
+
+        <!-- Shot strip -->
+        <div style="margin-bottom:0.75rem">
+          <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.35rem">SHOTS CAPTURED <span id="epShotCount" style="color:var(--accent)">0</span>/3</div>
+          <div id="epShots" style="display:flex;gap:0.35rem;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- Success -->
+        <div id="epSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+          <div style="font-size:1.3rem">✅</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem" id="epSuccessMsg">Enrolled!</div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:0.6rem;margin-bottom:0.5rem">
+          <button class="btn btn-secondary" style="flex:1;font-size:0.82rem" onclick="epCapture()">📸 Capture</button>
+          <button class="btn btn-primary" style="flex:1;font-size:0.82rem" id="epSaveBtn" onclick="epSave()" disabled>✅ Enroll</button>
+        </div>
+        <button id="epDeleteBtn" class="btn btn-danger" style="width:100%;font-size:0.82rem;display:none" onclick="epDelete()">🗑 Remove Enrollment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ATTENDANCE PAGE ═════════════════════════════════════════════════════ -->
+<div class="page" id="page-attendance">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Attendance Records</div>
+      <div class="page-sub" id="attDateSub">// Today's records</div>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+      <input type="date" id="attDate" onchange="loadAttendance()" style="padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
+      <select id="attDeptFilter" onchange="renderAttendance()" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
+        <option value="">All Departments</option>
+      </select>
+      <button class="btn btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY PILLS -->
+  <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
+    <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">✅ Present: <strong id="sumPresent" style="color:var(--accent)">0</strong></div>
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">⏰ Late: <strong id="sumLate" style="color:var(--accent3)">0</strong></div>
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">🚫 Absent: <strong id="sumAbsent" style="color:var(--danger)">0</strong></div>
+    <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">⏱ Avg Hours: <strong id="sumHours" style="color:var(--accent2)">0h</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Punch In</th>
+            <th>Punch Out</th>
+            <th>Hours</th>
+            <th>Method</th>
+            <th>In Dist</th>
+            <th>Out Dist</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="attTable">
+          <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Select a date to load records</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REPORTS PAGE ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-reports">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Reports</div>
+      <div class="page-sub">// Monthly attendance analytics</div>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <select id="reportMonth" style="padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none"></select>
+      <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
+      <button class="btn btn-export" onclick="exportMonthlyCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Present</th>
+            <th>Late</th>
+            <th>Absent</th>
+            <th>Total Hours</th>
+            <th>Avg Hours/Day</th>
+            <th>Attendance %</th>
+          </tr>
+        </thead>
+        <tbody id="reportTable">
+          <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Select a month and click Generate</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS PAGE ═══════════════════════════════════════════════════════ -->
+<div class="page" id="page-pinsettings">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Settings</div>
+      <div class="page-sub">// Geofence · Shifts · Biometrics · PIN · System</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+    <!-- GEOFENCE -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Geofence Configuration</div>
+      <div class="form-row" style="margin-bottom:0.85rem">
+        <label>Office Location</label>
+        <input type="text" id="s_loc" value="Hyderabad, Telangana">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem">
+        <div class="form-row">
+          <label>Latitude</label>
+          <input type="text" id="s_lat" value="17.3850">
+        </div>
+        <div class="form-row">
+          <label>Longitude</label>
+          <input type="text" id="s_lon" value="78.4867">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:0.85rem">
+        <label>Geofence Radius (metres)</label>
+        <input type="number" id="s_radius" value="500">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-top:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Strict Enforcement</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">Block punch outside zone</div>
+        </div>
+        <button class="toggle on" id="t_strict" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-top:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Allow WFH / Remote</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">Employees punch from home</div>
+        </div>
+        <button class="toggle on" id="t_wfh" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+
+    <!-- SHIFT & TIME -->
+    <div class="card">
+      <div class="card-title"><span class="dot amber"></span>Shift & Time Rules</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem">
+        <div class="form-row">
+          <label>Shift Start</label>
+          <input type="time" id="s_start" value="09:00">
+        </div>
+        <div class="form-row">
+          <label>Shift End</label>
+          <input type="time" id="s_end" value="18:00">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.85rem">
+        <div class="form-row">
+          <label>Grace Period (mins)</label>
+          <input type="number" id="s_grace" value="15">
+        </div>
+        <div class="form-row">
+          <label>Half-Day (hours)</label>
+          <input type="number" id="s_halfday" value="4">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-top:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Weekend Attendance</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">Allow punch on Sat/Sun</div>
+        </div>
+        <button class="toggle" id="t_weekend" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+
+    <!-- BIOMETRICS -->
+    <div class="card">
+      <div class="card-title"><span class="dot blue"></span>Biometric Settings</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Face Recognition</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">InsightFace ArcFace model</div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Liveness Detection</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">Prevent photo spoofing</div>
+        </div>
+        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:0.85rem;font-weight:500">Test Mode (GPS bypass)</div>
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">Disable for production</div>
+        </div>
+        <button class="toggle on" id="t_testmode" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="form-row" style="margin-top:0.85rem">
+        <label>Min Face Match Score (%)</label>
+        <input type="number" id="s_threshold" value="42" min="20" max="99">
+      </div>
+
+    </div>
+
+    <!-- PIN + SYSTEM -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem">
+      <div class="card">
+        <div class="card-title"><span class="dot amber"></span>Change Admin PIN</div>
+        <div class="form-row" style="margin-bottom:0.75rem">
+          <label>Current PIN</label>
+          <input type="password" id="curPin" maxlength="4" placeholder="••••">
+        </div>
+        <div class="form-row" style="margin-bottom:0.75rem">
+          <label>New PIN</label>
+          <input type="password" id="newPin" maxlength="4" placeholder="Enter new 4-digit PIN">
+        </div>
+        <div class="form-row" style="margin-bottom:1rem">
+          <label>Confirm New PIN</label>
+          <input type="password" id="confPin" maxlength="4" placeholder="Repeat new PIN">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="changePin()">🔐 Update PIN</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="dot blue"></span>System Health</div>
+        <div style="display:flex;flex-direction:column;gap:0.6rem">
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--muted)">API Status</span>
+            <span id="sysApi" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">Checking…</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--muted)">Face Model</span>
+            <span id="sysModel" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">Checking…</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--muted)">GPS Test Mode</span>
+            <span id="sysTest" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--accent3)">Checking…</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.5rem 0">
+            <span style="color:var(--muted)">Present Today</span>
+            <span id="sysRecords" style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">—</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="width:100%;margin-top:0.85rem" onclick="checkSystem()">↺ Refresh</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- ══ ADD / EDIT EMPLOYEE MODAL ═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add New Employee</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Employee Code *</label>
+        <input type="text" id="f_code" placeholder="EMP001">
+      </div>
+      <div class="form-row">
+        <label>Full Name *</label>
+        <input type="text" id="f_name" placeholder="Arjun Mehta">
+      </div>
+      <div class="form-row">
+        <label>Email *</label>
+        <input type="email" id="f_email" placeholder="arjun@company.com">
+      </div>
+      <div class="form-row">
+        <label>Phone</label>
+        <input type="text" id="f_phone" placeholder="9876543210">
+      </div>
+      <div class="form-row">
+        <label>Department</label>
+        <select id="f_dept">
+          <option value="">Select department…</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Role</label>
+        <select id="f_role">
+          <option value="employee">Employee</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Shift Start</label>
+        <input type="time" id="f_start" value="09:00">
+      </div>
+      <div class="form-row">
+        <label>Shift End</label>
+        <input type="time" id="f_end" value="18:00">
+      </div>
+      <div class="form-row full" style="margin-top:0.5rem">
+        <button class="btn btn-primary" id="saveEmpBtn" onclick="saveEmployee()" style="width:100%">💾 Save Employee</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DELETE MODAL ════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:1rem">⚠️</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-bottom:0.5rem">Delete Employee?</div>
+    <div style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem" id="delName">This will remove the employee and their face enrollment.</div>
+    <div style="display:flex;gap:0.75rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeDelModal()">Cancel</button>
+      <button class="btn btn-danger" style="flex:1" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
+<div class="toast" id="toast"><span id="toastIcon">✅</span><div id="toastMsg"></div></div>
+
+<script>
+const API_BASE = '/api';
+
+// ── AUTH CHECK ────────────────────────────────────────────────────────────
+if (sessionStorage.getItem('adminAuth') !== 'true') {
+  window.location.href = 'login.html';
+}
+const SUPABASE_URL = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+
+// ── AUTH & LOGOUT ────────────────────────────────────────────────────────────
+function logout() {
+  sessionStorage.clear();
+  window.location.href = 'login.html';
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (id==='dashboard')  loadDashboard();
+  if (id==='employees')  loadEmployees();
+  if (id==='addemp')     initAddEmp();
+  if (id==='enrollment') { loadEnrollmentList(); }
+  if (id==='attendance') initAttendance();
+  if (id==='reports')    initReports();
+  if (id==='pinsettings') checkSystem();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const res  = await fetch(API_BASE + '/attendance/today');
+    const data = await res.json();
+
+    document.getElementById('dPresent').textContent = data.present || 0;
+    document.getElementById('dAbsent').textContent  = data.absent  || 0;
+    document.getElementById('dLate').textContent    = data.late    || 0;
+    document.getElementById('dTotal').textContent   = data.total_employees || 0;
+    document.getElementById('dPresentSub').textContent = Math.round((data.present||0)/(data.total_employees||1)*100) + '% attendance';
+
+    // Update date sub
+    const ist = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+    document.getElementById('dashDateSub').textContent =
+      '// ' + ist.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+    // Greeting
+    const hr  = ist.getHours();
+    const tod = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('adminGreet').textContent = tod + ', Admin 👋';
+
+    // Live feed
+    const logs = (data.logs || []).slice().reverse();
+    const feed = document.getElementById('liveFeed');
+    if (!logs.length) {
+      feed.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace;font-size:0.8rem">No punches yet today</div>';
+    } else {
+      const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+      feed.innerHTML = logs.slice(0,8).map((l,i) => {
+        const t   = l.punch_in_time ? new Date(l.punch_in_time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : '—';
+        const out = l.punch_out_time ? new Date(l.punch_out_time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : null;
+        const c   = colors[i%colors.length];
+        const ini = (l.employee_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0;border-bottom:1px solid rgba(30,42,58,0.5)">
+          <div style="width:28px;height:28px;border-radius:50%;background:${c}20;color:${c};border:1px solid ${c}40;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0">${ini}</div>
+          <div style="flex:1">
+            <div style="font-size:0.83rem;font-weight:600">${l.employee_name||'Unknown'}</div>
+            <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace">${l.department||'—'} · IN ${t}${out?' · OUT '+out:''}</div>
+          </div>
+          <span style="font-size:0.68rem;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:10px;background:${l.status==='late'?'rgba(245,158,11,0.12)':'rgba(0,229,160,0.1)'};color:${l.status==='late'?'var(--accent3)':'var(--accent)'}">${(l.status||'present').toUpperCase()}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // At a glance
+    const glance = document.getElementById('glanceList');
+    const working = logs.filter(l => l.punch_in_time && !l.punch_out_time).length;
+    const done    = logs.filter(l => l.punch_out_time).length;
+    const avgH    = logs.filter(l=>l.hours_worked).reduce((a,b)=>a+(b.hours_worked||0),0) / (logs.filter(l=>l.hours_worked).length||1);
+    glance.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:0.85rem">Currently Working</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:0.85rem">${working} employees</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:0.85rem">Completed Day</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--accent2);font-size:0.85rem">${done} employees</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:0.85rem">Avg Hours Today</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--accent3);font-size:0.85rem">${avgH.toFixed(1)}h</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.65rem 0">
+        <span style="font-size:0.85rem">Attendance Rate</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:0.85rem">${Math.round((data.present||0)/(data.total_employees||1)*100)}%</span>
+      </div>
+    `;
+  } catch(e) {
+    console.error('loadDashboard error:', e);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init() {
+  await loadDepartments();
+  loadDashboard();
+  // Pre-populate ae_dept if already on addemp page
+  const aeSel = document.getElementById('ae_dept');
+  if (aeSel) {
+    aeSel.innerHTML = '<option value="">Select department…</option>';
+    departments.forEach(d => { const o=document.createElement('option'); o.value=d; o.textContent=d; aeSel.appendChild(o); });
+  }
+}
+
+// ── DEPARTMENTS ───────────────────────────────────────────────────────────
+let departments = [];
+async function loadDepartments() {
+  try {
+    const res = await fetch(`${API_BASE}/departments`);
+    if (!res.ok) {
+      // fallback hardcoded
+      departments = ['Engineering','HR','Finance','Marketing','Operations'];
+    } else {
+      const data = await res.json();
+      departments = data.map(d => d.name);
+    }
+  } catch(e) {
+    departments = ['Engineering','HR','Finance','Marketing','Operations'];
+  }
+  // Populate selects — include all department dropdowns
+  ['f_dept','ae_dept','deptFilter','attDeptFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const first = el.options[0];
+    el.innerHTML = '';
+    if (first) el.appendChild(first);
+    departments.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      el.appendChild(opt);
+    });
+  });
+  document.getElementById('statDepts').textContent = departments.length;
+}
+
+// ── EMPLOYEES ─────────────────────────────────────────────────────────────
+let allEmployees = [];
+let allEnrolled  = [];
+let editingId    = null;
+let deletingId   = null;
+const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+
+async function loadEmployees() {
+  try {
+    const [empRes, faceRes, todayRes] = await Promise.all([
+      fetch(`${API_BASE}/employees`),
+      fetch(`${API_BASE}/face/list`),
+      fetch(`${API_BASE}/attendance/today`)
+    ]);
+
+    allEmployees = empRes.ok ? await empRes.json() : [];
+    allEnrolled  = faceRes.ok ? await faceRes.json() : [];
+    const today  = todayRes.ok ? await todayRes.json() : {present:0, logs:[]};
+
+    document.getElementById('statTotal').textContent   = allEmployees.length;
+    document.getElementById('statPresent').textContent = today.present || 0;
+    document.getElementById('statEnrolled').textContent = allEnrolled.length;
+    document.getElementById('empCount').textContent    = allEmployees.length;
+
+    renderEmployees(allEmployees);
+  } catch(e) {
+    console.error('loadEmployees error:', e);
+    showToast('❌','Failed to load employees. Is Docker running?', true);
+  }
+}
+
+function renderEmployees(list) {
+  const tbody = document.getElementById('empTable');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No employees found</td></tr>';
+    return;
+  }
+  const enrolledIds = new Set(allEnrolled.map(e => e.employee_id));
+  tbody.innerHTML = list.map((e,i) => {
+    const initials = e.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const c = colors[i % colors.length];
+    const enrolled = enrolledIds.has(e.id);
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40">${initials}</div>
+          <div>
+            <div style="font-weight:600;cursor:pointer;color:var(--text)" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'" onclick="openEnrollModal('${e.id}','${e.name}','${e.emp_code}','${e.department||''}',${enrolled},'${c}')">${e.name}</div>
+            <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">${e.role || 'employee'}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${e.emp_code || '—'}</td>
+      <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${e.department || '—'}</span></td>
+      <td style="font-size:0.8rem">${e.email || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.78rem">${e.phone || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.78rem">${e.shift_start||'09:00'} – ${e.shift_end||'18:00'}</td>
+      <td><span class="status-pill ${enrolled?'pill-active':'pill-inactive'}" style="cursor:pointer" onclick="openEnrollModal('${e.id}','${e.name}','${e.emp_code}','${e.department||''}',${enrolled},'${c}')" title="Click to manage enrollment">${enrolled?'✓ Enrolled':'✗ Enroll'}</span></td>
+      <td><span class="status-pill ${e.is_active!==false?'pill-active':'pill-inactive'}">${e.is_active!==false?'Active':'Inactive'}</span></td>
+      <td>
+        <div style="display:flex;gap:0.4rem">
+          <button class="btn btn-secondary btn-sm" onclick="openEditModal('${e.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="openDelModal('${e.id}','${e.name}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterEmployees(search) {
+  const dept = document.getElementById('deptFilter').value;
+  const s = search.toLowerCase();
+  const filtered = allEmployees.filter(e => {
+    const matchSearch = !s || e.name.toLowerCase().includes(s) || (e.emp_code||'').toLowerCase().includes(s);
+    const matchDept   = !dept || e.department === dept;
+    return matchSearch && matchDept;
+  });
+  renderEmployees(filtered);
+}
+
+// ── ADD / EDIT MODAL ──────────────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '+ Add New Employee';
+  document.getElementById('saveEmpBtn').textContent = '💾 Save Employee';
+  ['f_code','f_name','f_email','f_phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f_dept').value  = '';
+  document.getElementById('f_role').value  = 'employee';
+  document.getElementById('f_start').value = '09:00';
+  document.getElementById('f_end').value   = '18:00';
+  document.getElementById('empModal').classList.add('show');
+}
+
+function openEditModal(id) {
+  const emp = allEmployees.find(e => e.id === id);
+  if (!emp) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = '✏️ Edit Employee';
+  document.getElementById('saveEmpBtn').textContent = '💾 Update Employee';
+  document.getElementById('f_code').value  = emp.emp_code  || '';
+  document.getElementById('f_name').value  = emp.name      || '';
+  document.getElementById('f_email').value = emp.email     || '';
+  document.getElementById('f_phone').value = emp.phone     || '';
+  document.getElementById('f_dept').value  = emp.department|| '';
+  document.getElementById('f_role').value  = emp.role      || 'employee';
+  document.getElementById('f_start').value = emp.shift_start|| '09:00';
+  document.getElementById('f_end').value   = emp.shift_end  || '18:00';
+  document.getElementById('empModal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('empModal').classList.remove('show'); }
+
+async function saveEmployee() {
+  const name  = document.getElementById('f_name').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const code  = document.getElementById('f_code').value.trim();
+  if (!name || !email || !code) { showToast('⚠️','Name, Code and Email are required!', true); return; }
+
+  const btn = document.getElementById('saveEmpBtn');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+  const payload = {
+    emp_code:    code,
+    name:        name,
+    email:       email:       email || null,
+    phone:       document.getElementById('f_phone').value.trim(),
+    department:  document.getElementById('f_dept').value,
+    role:        document.getElementById('f_role').value,
+    shift_start: document.getElementById('f_start').value,
+    shift_end:   document.getElementById('f_end').value,
+  };
+
+  try {
+    const url    = editingId ? `${API_BASE}/employees/${editingId}` : `${API_BASE}/employees`;
+    const method = editingId ? 'PUT' : 'POST';
+    const res    = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data   = await res.json();
+    if (res.ok && data.success) {
+      showToast('✅', editingId ? `${name} updated!` : `${name} added successfully!`);
+      closeModal();
+      await loadEmployees();
+    } else {
+      showToast('❌', data.message || 'Failed to save employee', true);
+    }
+  } catch(e) {
+    showToast('❌','Network error: ' + e.message, true);
+  }
+  btn.disabled = false;
+  btn.textContent = editingId ? '💾 Update Employee' : '💾 Save Employee';
+}
+
+// ── DELETE ────────────────────────────────────────────────────────────────
+function openDelModal(id, name) {
+  deletingId = id;
+  document.getElementById('delName').textContent = `Delete "${name}"? This will remove their record and face enrollment.`;
+  document.getElementById('delModal').classList.add('show');
+}
+function closeDelModal() { document.getElementById('delModal').classList.remove('show'); }
+
+async function confirmDelete() {
+  if (!deletingId) return;
+  try {
+    const res  = await fetch(`${API_BASE}/employees/${deletingId}`, { method:'DELETE' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('✅','Employee deleted successfully');
+      closeDelModal();
+      await loadEmployees();
+    } else {
+      showToast('❌', data.message || 'Delete failed', true);
+    }
+  } catch(e) {
+    showToast('❌','Network error', true);
+  }
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────────────────
+let attData = [];
+
+function initAttendance() {
+  const today = new Date();
+  const ist = new Date(today.getTime() + (5.5*60*60*1000));
+  document.getElementById('attDate').value = ist.toISOString().split('T')[0];
+  loadAttendance();
+}
+
+async function loadAttendance() {
+  const date = document.getElementById('attDate').value;
+  if (!date) return;
+  document.getElementById('attDateSub').textContent = `// ${date}`;
+  const tbody = document.getElementById('attTable');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Loading…</td></tr>';
+  try {
+    const res  = await fetch(`${API_BASE}/attendance/date/${date}`);
+    const data = await res.json();
+    attData = data.logs || [];
+    renderAttendance();
+    // Update summary
+    const present = attData.filter(l => l.status === 'present').length;
+    const late    = attData.filter(l => l.status === 'late').length;
+    const absent  = (data.total_employees||0) - present - late;
+    const avgH    = attData.filter(l=>l.hours_worked).reduce((a,b)=>a+(b.hours_worked||0),0) / (attData.filter(l=>l.hours_worked).length||1);
+    document.getElementById('sumPresent').textContent = present + late;
+    document.getElementById('sumLate').textContent    = late;
+    document.getElementById('sumAbsent').textContent  = Math.max(0, absent);
+    document.getElementById('sumHours').textContent   = avgH.toFixed(1)+'h';
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--danger);font-family:DM Mono,monospace">⚠ Failed to load</td></tr>';
+  }
+}
+
+function renderAttendance() {
+  const dept   = document.getElementById('attDeptFilter').value;
+  const filtered = dept ? attData.filter(l => l.department === dept) : attData;
+  const tbody  = document.getElementById('attTable');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No records for this date</td></tr>';
+    return;
+  }
+  const fmt = ts => {
+    if (!ts) return '—';
+    try { return new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}); }
+    catch(e) { return ts.substring(11,16); }
+  };
+  tbody.innerHTML = filtered.map((l,i) => {
+    const c = colors[i%colors.length];
+    const initials = (l.employee_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const st = l.status || 'present';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:0.6rem">
+        <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
+        <span style="font-weight:500">${l.employee_name||'Unknown'}</span>
+      </div></td>
+      <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${l.department||'—'}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${fmt(l.punch_in_time)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${fmt(l.punch_out_time)}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${l.hours_worked ? l.hours_worked+'h' : (l.punch_in_time && !l.punch_out_time ? '<span style="color:var(--accent3)">Working…</span>' : '—')}</td>
+      <td style="font-size:0.8rem">📷 ${l.method||'face'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">${l.punch_in_dist_m!=null?l.punch_in_dist_m+'m':'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted)">${l.punch_out_dist_m!=null?l.punch_out_dist_m+'m':'—'}</td>
+      <td><span class="status-pill pill-${st}">${st.toUpperCase()}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!attData.length) { showToast('⚠️','No data to export', true); return; }
+  const fmt = ts => ts ? new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : '';
+  const rows = [
+    ['Date','Employee','Department','Punch In','Punch Out','Hours','Method','Status','In Distance','Out Distance'],
+    ...attData.map(l => [
+      l.date, l.employee_name||'', l.department||'',
+      fmt(l.punch_in_time), fmt(l.punch_out_time),
+      l.hours_worked||'', l.method||'face', l.status||'',
+      l.punch_in_dist_m!=null?l.punch_in_dist_m+'m':'',
+      l.punch_out_dist_m!=null?l.punch_out_dist_m+'m':''
+    ])
+  ];
+  downloadCSV(rows, `attendance_${document.getElementById('attDate').value}.csv`);
+  showToast('⬇️','CSV exported!');
+}
+
+// ── MONTHLY REPORT ────────────────────────────────────────────────────────
+let reportData = [];
+
+function initReports() {
+  const sel = document.getElementById('reportMonth');
+  sel.innerHTML = '';
+  const now = new Date();
+  for (let i=0; i<12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const val = d.toISOString().substring(0,7);
+    const lbl = d.toLocaleDateString('en-IN',{year:'numeric',month:'long'});
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    sel.appendChild(opt);
+  }
+}
+
+async function loadReport() {
+  const month = document.getElementById('reportMonth').value;
+  const tbody = document.getElementById('reportTable');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Generating report…</td></tr>';
+  try {
+    const res  = await fetch(`${API_BASE}/attendance/monthly?month=${month}`);
+    reportData = res.ok ? await res.json() : [];
+    if (!reportData.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No data for this month</td></tr>';
+      return;
+    }
+    const workDays = 26;
+    tbody.innerHTML = reportData.map((r,i) => {
+      const pct = Math.round(((r.present_days||0)+(r.late_days||0)) / workDays * 100);
+      const c   = colors[i%colors.length];
+      const initials = (r.name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:0.6rem">
+          <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
+          <span style="font-weight:500">${r.name}</span>
+        </div></td>
+        <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${r.department||'—'}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${r.present_days||0}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent3)">${r.late_days||0}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--danger)">${r.absent_days||0}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.total_hours||0}h</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.avg_hours||0}h</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:60px">
+              <div style="height:100%;width:${pct}%;background:${pct>=90?'var(--accent)':pct>=75?'var(--accent3)':'var(--danger)'};border-radius:3px"></div>
+            </div>
+            <span style="font-family:'DM Mono',monospace;font-size:0.78rem;color:${pct>=90?'var(--accent)':pct>=75?'var(--accent3)':'var(--danger)'}">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--danger);font-family:DM Mono,monospace">⚠ ${e.message}</td></tr>`;
+  }
+}
+
+function exportMonthlyCSV() {
+  if (!reportData.length) { showToast('⚠️','Generate report first', true); return; }
+  const rows = [
+    ['Employee','Department','Present','Late','Absent','Total Hours','Avg Hours/Day','Attendance %'],
+    ...reportData.map(r => {
+      const pct = Math.round(((r.present_days||0)+(r.late_days||0))/26*100);
+      return [r.name, r.department||'', r.present_days||0, r.late_days||0, r.absent_days||0, r.total_hours||0, r.avg_hours||0, pct+'%'];
+    })
+  ];
+  downloadCSV(rows, `monthly_report_${document.getElementById('reportMonth').value}.csv`);
+  showToast('⬇️','Monthly report exported!');
+}
+
+function downloadCSV(rows, filename) {
+  const csv  = rows.map(r => r.map(c => `"${(c+'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ── PIN SETTINGS ──────────────────────────────────────────────────────────
+function changePin() {
+  const cur  = document.getElementById('curPin').value;
+  const nw   = document.getElementById('newPin').value;
+  const conf = document.getElementById('confPin').value;
+  if (cur !== adminPin)  { showToast('❌','Current PIN is wrong', true); return; }
+  if (nw.length !== 4)   { showToast('⚠️','New PIN must be 4 digits', true); return; }
+  if (nw !== conf)       { showToast('⚠️','PINs do not match', true); return; }
+  adminPin = nw;
+  localStorage.setItem('adminPin', nw);
+  document.getElementById('curPin').value = '';
+  document.getElementById('newPin').value = '';
+  document.getElementById('confPin').value = '';
+  showToast('✅','PIN updated successfully!');
+}
+
+async function checkSystem() {
+  try {
+    const res  = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    document.getElementById('sysApi').textContent   = '● ONLINE';
+    document.getElementById('sysApi').style.color   = 'var(--accent)';
+    document.getElementById('sysModel').textContent = data.model || 'Loaded';
+    document.getElementById('sysModel').style.color = 'var(--accent)';
+    document.getElementById('sysTest').textContent  = data.test_mode ? '● TEST MODE ON' : '● PRODUCTION';
+    document.getElementById('sysTest').style.color  = data.test_mode ? 'var(--accent3)' : 'var(--accent)';
+  } catch(e) {
+    document.getElementById('sysApi').textContent = '● OFFLINE';
+    document.getElementById('sysApi').style.color = 'var(--danger)';
+  }
+  try {
+    const r2 = await fetch(`${API_BASE}/attendance/today`);
+    const d2 = await r2.json();
+    document.getElementById('sysRecords').textContent = `${d2.present||0} present today`;
+  } catch(e) {}
+}
+
+
+
+// ── ADD EMPLOYEE PAGE ─────────────────────────────────────────────────────
+function initAddEmp() {
+  // Populate department dropdown
+  const sel = document.getElementById('ae_dept');
+  sel.innerHTML = '<option value="">Select department…</option>';
+  departments.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d; sel.appendChild(o);
+  });
+  // Clear form
+  ['ae_code','ae_name','ae_email','ae_phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('ae_role').value  = 'employee';
+  document.getElementById('ae_start').value = '09:00';
+  document.getElementById('ae_end').value   = '18:00';
+}
+
+async function addEmployee() {
+  const name  = document.getElementById('ae_name').value.trim();
+  const email = document.getElementById('ae_email').value.trim();
+  const code  = document.getElementById('ae_code').value.trim();
+  if (!name || !code) {
+    showToast('⚠️','Name and Employee Code are required!', true); return;
+  }
+  const btn = document.getElementById('ae_saveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+  const payload = {
+    emp_code:    code,
+    name,
+    email:       email || null,
+    phone:       document.getElementById('ae_phone').value.trim(),
+    department:  document.getElementById('ae_dept').value,
+    role:        document.getElementById('ae_role').value,
+    shift_start: document.getElementById('ae_start').value,
+    shift_end:   document.getElementById('ae_end').value,
+  };
+
+  try {
+    const res  = await fetch(API_BASE + '/employees', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('✅', name + ' added! Go to Face Enrollment to register their face.');
+      // Add to recently added list
+      const list = document.getElementById('recentlyAdded');
+      const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6'];
+      const c = colors[Math.floor(Math.random()*colors.length)];
+      const ini = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:0.65rem;padding:0.6rem;background:var(--surface2);border-radius:8px;margin-bottom:0.4rem;animation:fadeUp 0.3s ease';
+      item.innerHTML = `
+        <div style="width:30px;height:30px;border-radius:50%;background:${c}20;color:${c};border:1px solid ${c}40;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">${ini}</div>
+        <div style="flex:1">
+          <div style="font-size:0.82rem;font-weight:600">${name}</div>
+          <div style="font-size:0.68rem;color:var(--muted)">${code} · ${payload.department||'No dept'}</div>
+        </div>
+        <span style="font-size:0.68rem;padding:2px 7px;border-radius:10px;background:rgba(245,158,11,0.12);color:var(--accent3);font-family:'DM Mono',monospace">Enroll Pending</span>
+      `;
+      if (list.textContent.includes('No employees')) list.innerHTML = '';
+      list.prepend(item);
+      // Clear form for next entry
+      ['ae_code','ae_name','ae_email','ae_phone'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    } else {
+      const msg = data?.detail?.message || data?.message || 'Failed to save';
+      showToast('❌', msg, true);
+    }
+  } catch(e) {
+    showToast('❌','Network error: ' + e.message, true);
+  }
+  btn.disabled = false; btn.textContent = '💾 Add Employee';
+}
+
+// ── FACE ENROLLMENT PAGE ───────────────────────────────────────────────────
+let epStream     = null;
+let epShots      = [];
+let epCurrentId  = null;
+let epIsEnrolled = false;
+let epAllEmps    = [];
+let epFilter     = 'all';
+
+async function loadEnrollmentList() {
+  try {
+    const [empRes, faceRes] = await Promise.all([
+      fetch(API_BASE + '/employees'),
+      fetch(API_BASE + '/face/list')
+    ]);
+    epAllEmps = empRes.ok ? await empRes.json() : [];
+    const enrolled = faceRes.ok ? await faceRes.json() : [];
+    const enrolledIds = new Set(enrolled.map(e => e.employee_id));
+
+    // Update progress
+    const total = epAllEmps.length;
+    const done  = epAllEmps.filter(e => enrolledIds.has(e.id)).length;
+    document.getElementById('enrollProgress').textContent = `${done} / ${total} enrolled`;
+    document.getElementById('enrollProgressBar').style.width = total ? (done/total*100)+'%' : '0%';
+
+    // Mark enrolled status on employees
+    epAllEmps = epAllEmps.map(e => ({...e, enrolled: enrolledIds.has(e.id)}));
+
+    renderEnrollList();
+  } catch(e) {
+    showToast('❌','Failed to load employees', true);
+  }
+}
+
+function filterEnrollList(f, btn) {
+  epFilter = f;
+  document.querySelectorAll('#page-enrollment .btn-secondary').forEach(b => {
+    b.style.borderColor = ''; b.style.color = '';
+  });
+  if (btn) { btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
+  renderEnrollList();
+}
+
+function renderEnrollList() {
+  const list   = document.getElementById('enrollEmpList');
+  const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+  let   emps   = epAllEmps;
+  if (epFilter === 'pending') emps = emps.filter(e => !e.enrolled);
+  if (epFilter === 'done')    emps = emps.filter(e => e.enrolled);
+
+  if (!emps.length) {
+    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${epFilter==='done'?'No enrolled employees yet':epFilter==='pending'?'All employees enrolled! ✅':'No employees found'}</div>`;
+    return;
+  }
+
+  list.innerHTML = emps.map((e, i) => {
+    const c = colors[i % colors.length];
+    const ini = e.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const isActive = epCurrentId === e.id;
+    return `<div onclick="selectEpEmployee('${e.id}','${e.name}','${e.emp_code}','${e.department||''}',${e.enrolled},'${c}')"
+      style="display:flex;align-items:center;gap:0.65rem;padding:0.65rem 0.75rem;background:${isActive?'rgba(0,229,160,0.08)':'var(--surface2)'};border:1px solid ${isActive?'rgba(0,229,160,0.3)':'transparent'};border-radius:9px;cursor:pointer;transition:all 0.2s"
+      onmouseover="this.style.borderColor='rgba(0,229,160,0.2)'" onmouseout="if('${e.id}'!==epCurrentId)this.style.borderColor='transparent'">
+      <div style="width:32px;height:32px;border-radius:50%;background:${c}20;color:${c};border:1px solid ${c}40;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}</div>
+        <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${e.emp_code} · ${e.department||'—'}</div>
+      </div>
+      <span style="font-size:0.65rem;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:10px;flex-shrink:0;background:${e.enrolled?'rgba(0,229,160,0.12)':'rgba(245,158,11,0.12)'};color:${e.enrolled?'var(--accent)':'var(--accent3)'}">
+        ${e.enrolled ? '✓ Done' : '⏳ Pending'}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function selectEpEmployee(id, name, code, dept, isEnrolled, color) {
+  epCurrentId  = id;
+  epIsEnrolled = isEnrolled;
+  epShots      = [];
+
+  document.getElementById('enrollNoSel').style.display = 'none';
+  document.getElementById('enrollPanel').style.display  = 'block';
+
+  // Set info
+  const ini = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('epAvatar').textContent   = ini;
+  document.getElementById('epAvatar').style.cssText = `width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0;background:${color}20;color:${color};border:1px solid ${color}40`;
+  document.getElementById('epName').textContent     = name;
+  document.getElementById('epCode').textContent     = code + (dept ? ' · ' + dept : '');
+
+  const st = document.getElementById('epStatus');
+  st.textContent   = isEnrolled ? '✓ Enrolled' : '⏳ Enroll Pending';
+  st.style.cssText = `font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px;background:${isEnrolled?'rgba(0,229,160,0.12)':'rgba(245,158,11,0.12)'};color:${isEnrolled?'var(--accent)':'var(--accent3)'}`;
+
+  document.getElementById('epDeleteBtn').style.display = isEnrolled ? 'block' : 'none';
+  document.getElementById('epSuccess').style.display   = 'none';
+  document.getElementById('epSaveBtn').disabled        = true;
+  renderEpShots();
+
+  // Re-render list to highlight selected
+  renderEnrollList();
+
+  // Start camera
+  startEpCamera();
+}
+
+async function startEpCamera() {
+  try {
+    stopEpCamera();
+    epStream = await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:640},height:{ideal:480},facingMode:'user'}
+    });
+    const v = document.getElementById('epVideo');
+    v.srcObject = epStream;
+    await v.play().catch(() => {});
+    document.getElementById('epCamBox').style.display = 'block';
+    document.getElementById('epCamErr').style.display = 'none';
+  } catch(e) {
+    document.getElementById('epCamBox').style.display = 'none';
+    document.getElementById('epCamErr').style.display = 'block';
+    const msg = e.name === 'NotAllowedError'
+      ? 'Camera blocked. Click 📷 in address bar → Allow → Retry.'
+      : 'Camera error: ' + e.message;
+    document.getElementById('epCamErrMsg').textContent = msg;
+  }
+}
+
+function stopEpCamera() {
+  if (epStream) { epStream.getTracks().forEach(t => t.stop()); epStream = null; }
+}
+
+function epCapture() {
+  if (!epStream) { showToast('⚠️','Start camera first', true); return; }
+  if (epShots.length >= 5) { showToast('⚠️','Max 5 shots', true); return; }
+  const v = document.getElementById('epVideo');
+  const c = document.getElementById('enrollCanvas');
+  c.width = v.videoWidth||640; c.height = v.videoHeight||480;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(v, 0, 0);
+  const img = c.toDataURL('image/jpeg', 0.92);
+  if (img.length < 5000) { showToast('⚠️','Image too small — is camera active?', true); return; }
+  epShots.push(img);
+  renderEpShots();
+  document.getElementById('epSaveBtn').disabled = false;
+  showToast('📸','Shot ' + epShots.length + ' captured!');
+}
+
+function renderEpShots() {
+  const strip = document.getElementById('epShots');
+  document.getElementById('epShotCount').textContent = epShots.length;
+  strip.innerHTML = '';
+  epShots.forEach((s, i) => {
+    const img = document.createElement('img');
+    img.src = s;
+    img.style.cssText = 'width:50px;height:50px;border-radius:7px;object-fit:cover;border:2px solid var(--accent);cursor:pointer';
+    img.title = 'Double-click to remove';
+    img.ondblclick = () => { epShots.splice(i,1); renderEpShots(); if(!epShots.length) document.getElementById('epSaveBtn').disabled=true; };
+    strip.appendChild(img);
+  });
+  // Add + button
+  if (epShots.length < 5) {
+    const add = document.createElement('div');
+    add.style.cssText = 'width:50px;height:50px;border-radius:7px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:1rem;transition:all 0.2s';
+    add.textContent = '+';
+    add.onmouseover = () => { add.style.borderColor='var(--accent)'; add.style.color='var(--accent)'; };
+    add.onmouseout  = () => { add.style.borderColor='var(--border)'; add.style.color='var(--muted)'; };
+    add.onclick = epCapture;
+    strip.appendChild(add);
+  }
+}
+
+async function epSave() {
+  if (!epShots.length || !epCurrentId) return;
+  const btn = document.getElementById('epSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Enrolling…';
+  try {
+    const res  = await fetch(API_BASE + '/face/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: epCurrentId, image_base64: epShots[0]})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      epIsEnrolled = true;
+      document.getElementById('epSuccess').style.display = 'block';
+      document.getElementById('epSuccessMsg').textContent = document.getElementById('epName').textContent + ' enrolled successfully!';
+      document.getElementById('epStatus').textContent     = '✓ Enrolled';
+      document.getElementById('epStatus').style.color     = 'var(--accent)';
+      document.getElementById('epStatus').style.background = 'rgba(0,229,160,0.12)';
+      document.getElementById('epDeleteBtn').style.display = 'block';
+      showToast('✅', document.getElementById('epName').textContent + ' face enrolled!');
+      // Refresh list
+      await loadEnrollmentList();
+      // Re-select to update
+      const emp = epAllEmps.find(e => e.id === epCurrentId);
+      if (emp) renderEnrollList();
+    } else {
+      const msg = data?.detail?.message || 'Enrollment failed';
+      showToast('❌', msg, true);
+      btn.disabled = false; btn.textContent = '✅ Enroll';
+    }
+  } catch(e) {
+    showToast('❌','Error: ' + e.message, true);
+    btn.disabled = false; btn.textContent = '✅ Enroll';
+  }
+}
+
+async function epDelete() {
+  if (!epCurrentId) return;
+  const name = document.getElementById('epName').textContent;
+  if (!confirm('Remove face enrollment for ' + name + '?')) return;
+  try {
+    const res = await fetch(API_BASE + '/face/delete/' + epCurrentId, {method:'DELETE'});
+    if (res.ok) {
+      epIsEnrolled = false;
+      epShots = []; renderEpShots();
+      document.getElementById('epSuccess').style.display   = 'none';
+      document.getElementById('epDeleteBtn').style.display = 'none';
+      document.getElementById('epSaveBtn').disabled        = true;
+      document.getElementById('epSaveBtn').textContent     = '✅ Enroll';
+      document.getElementById('epStatus').textContent      = '⏳ Enroll Pending';
+      document.getElementById('epStatus').style.color      = 'var(--accent3)';
+      document.getElementById('epStatus').style.background = 'rgba(245,158,11,0.12)';
+      showToast('✅','Face enrollment removed');
+      await loadEnrollmentList();
+    }
+  } catch(e) { showToast('❌','Error: ' + e.message, true); }
+}
+
+// ── FACE ENROLLMENT ────────────────────────────────────────────────────────
+let enrollStream  = null;
+let enrollShots   = [];
+let enrollEmpId   = null;
+let enrollEmpName = '';
+const enrollColors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+
+function openEnrollModal(id, name, code, dept, isEnrolled, color) {
+  enrollEmpId   = id;
+  enrollEmpName = name;
+  enrollShots   = [];
+
+  // Set employee info
+  const initials = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('enrollAvatar').textContent   = initials;
+  document.getElementById('enrollAvatar').style.cssText = `width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;background:${color}20;color:${color};border:1px solid ${color}40`;
+  document.getElementById('enrollEmpName').textContent  = name;
+  document.getElementById('enrollEmpCode').textContent  = code + (dept ? ' · ' + dept : '');
+
+  const badge = document.getElementById('enrollBadge');
+  badge.textContent   = isEnrolled ? '✓ Enrolled' : '✗ Not Enrolled';
+  badge.style.cssText = `margin-left:auto;font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px;background:${isEnrolled?'rgba(0,229,160,0.12)':'rgba(239,68,68,0.12)'};color:${isEnrolled?'var(--accent)':'var(--danger)'}`;
+
+  // Show delete button if enrolled
+  document.getElementById('enrollDeleteBtn').style.display = isEnrolled ? 'block' : 'none';
+
+  // Reset UI
+  document.getElementById('enrollResult').style.display = 'none';
+  document.getElementById('enrollSaveBtn').disabled = true;
+  renderEnrollShots();
+
+  document.getElementById('enrollModal').classList.add('show');
+  startEnrollCamera();
+}
+
+function closeEnrollModal() {
+  document.getElementById('enrollModal').classList.remove('show');
+  stopEnrollCamera();
+}
+
+async function startEnrollCamera() {
+  try {
+    stopEnrollCamera();
+    enrollStream = await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:640},height:{ideal:480},facingMode:'user'}
+    });
+    const v = document.getElementById('enrollVideo');
+    v.srcObject = enrollStream;
+    await v.play().catch(() => {});
+    document.getElementById('enrollCamBox').style.display = 'block';
+    document.getElementById('enrollCamErr').style.display = 'none';
+  } catch(e) {
+    document.getElementById('enrollCamBox').style.display = 'none';
+    document.getElementById('enrollCamErr').style.display = 'block';
+    const msg = e.name === 'NotAllowedError'
+      ? 'Camera blocked. Click the 📷 icon in browser address bar → Allow → Retry.'
+      : 'Camera error: ' + e.message;
+    document.getElementById('enrollCamErrMsg').textContent = msg;
+  }
+}
+
+function stopEnrollCamera() {
+  if (enrollStream) { enrollStream.getTracks().forEach(t => t.stop()); enrollStream = null; }
+}
+
+function enrollCapture() {
+  if (!enrollStream) { showToast('⚠️','Start camera first', true); return; }
+  if (enrollShots.length >= 5) { showToast('⚠️','Max 5 shots', true); return; }
+  const v = document.getElementById('enrollVideo');
+  const c = document.getElementById('enrollCanvas');
+  c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(v, 0, 0);
+  const img = c.toDataURL('image/jpeg', 0.92);
+  if (img.length < 5000) { showToast('⚠️','Image too small — is camera active?', true); return; }
+  enrollShots.push(img);
+  renderEnrollShots();
+  document.getElementById('enrollSaveBtn').disabled = false;
+  showToast('📸', 'Shot ' + enrollShots.length + ' captured!');
+}
+
+function renderEnrollShots() {
+  const strip = document.getElementById('enrollShots');
+  strip.innerHTML = '';
+  enrollShots.forEach((s, i) => {
+    const img = document.createElement('img');
+    img.src = s;
+    img.style.cssText = 'width:56px;height:56px;border-radius:8px;object-fit:cover;border:2px solid var(--accent);cursor:pointer';
+    img.title = 'Double-click to remove';
+    img.ondblclick = () => { enrollShots.splice(i,1); renderEnrollShots(); if(!enrollShots.length) document.getElementById('enrollSaveBtn').disabled=true; };
+    strip.appendChild(img);
+  });
+  // Add button
+  if (enrollShots.length < 5) {
+    const add = document.createElement('div');
+    add.style.cssText = 'width:56px;height:56px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.1rem;cursor:pointer;transition:all 0.2s';
+    add.textContent = '+';
+    add.onmouseover = () => add.style.borderColor = 'var(--accent)';
+    add.onmouseout  = () => add.style.borderColor = 'var(--border)';
+    add.onclick = enrollCapture;
+    strip.appendChild(add);
+  }
+}
+
+async function saveEnrollment() {
+  if (!enrollShots.length || !enrollEmpId) return;
+  const btn = document.getElementById('enrollSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Enrolling…';
+
+  // Use the first/best shot
+  const img = enrollShots[0];
+  try {
+    const res  = await fetch(API_BASE + '/face/register', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: enrollEmpId, image_base64: img})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('enrollResult').style.display = 'block';
+      document.getElementById('enrollResultMsg').textContent = enrollEmpName + ' enrolled successfully!';
+      document.getElementById('enrollDeleteBtn').style.display = 'block';
+      // Update badge
+      document.getElementById('enrollBadge').textContent = '✓ Enrolled';
+      document.getElementById('enrollBadge').style.color = 'var(--accent)';
+      document.getElementById('enrollBadge').style.background = 'rgba(0,229,160,0.12)';
+      showToast('✅', enrollEmpName + ' face enrolled!');
+      // Refresh employee list
+      setTimeout(() => { loadEmployees(); }, 500);
+    } else {
+      const msg = data?.detail?.message || data?.message || 'Enrollment failed';
+      showToast('❌', msg, true);
+      btn.disabled = false; btn.textContent = '✅ Save Enrollment';
+    }
+  } catch(e) {
+    showToast('❌', 'Network error: ' + e.message, true);
+    btn.disabled = false; btn.textContent = '✅ Save Enrollment';
+  }
+}
+
+async function deleteEnrollment() {
+  if (!enrollEmpId) return;
+  if (!confirm('Remove face enrollment for ' + enrollEmpName + '?')) return;
+  try {
+    const res = await fetch(API_BASE + '/face/delete/' + enrollEmpId, {method:'DELETE'});
+    if (res.ok) {
+      document.getElementById('enrollResult').style.display = 'none';
+      document.getElementById('enrollDeleteBtn').style.display = 'none';
+      document.getElementById('enrollBadge').textContent = '✗ Not Enrolled';
+      document.getElementById('enrollBadge').style.color = 'var(--danger)';
+      document.getElementById('enrollBadge').style.background = 'rgba(239,68,68,0.12)';
+      showToast('✅', 'Face enrollment removed');
+      enrollShots = []; renderEnrollShots();
+      document.getElementById('enrollSaveBtn').disabled = true;
+      setTimeout(() => { loadEmployees(); }, 500);
+    }
+  } catch(e) { showToast('❌','Error: ' + e.message, true); }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(icon, msg, isErr=false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent  = msg;
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+
+<!-- ══ FACE ENROLLMENT MODAL ══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="enrollModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📷 Face Enrollment</div>
+      <button class="modal-close" onclick="closeEnrollModal()">✕</button>
+    </div>
+
+    <!-- Employee Info -->
+    <div style="display:flex;align-items:center;gap:0.85rem;background:var(--surface2);border-radius:10px;padding:0.85rem 1rem;margin-bottom:1.25rem">
+      <div id="enrollAvatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0"></div>
+      <div>
+        <div id="enrollEmpName" style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem"></div>
+        <div id="enrollEmpCode" style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted)"></div>
+      </div>
+      <div id="enrollBadge" style="margin-left:auto;font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px"></div>
+    </div>
+
+    <!-- Webcam -->
+    <div id="enrollCamBox" style="position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
+      <video id="enrollVideo" autoplay muted playsinline style="width:100%;max-height:220px;object-fit:cover;transform:scaleX(-1);display:block"></video>
+      <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
+        <div style="width:110px;height:130px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
+        <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+      </div>
+      <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.4rem 0.75rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent)">● LIVE · Look straight at camera</div>
+    </div>
+
+    <!-- Camera error -->
+    <div id="enrollCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:1rem;text-align:center;margin-bottom:0.75rem">
+      <div style="font-size:1.2rem;margin-bottom:0.35rem">📷</div>
+      <div id="enrollCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.6rem;line-height:1.5"></div>
+      <button onclick="startEnrollCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
+    </div>
+
+    <!-- Shot strip -->
+    <div style="margin-bottom:0.75rem">
+      <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.4rem">CAPTURED SHOTS (take 3 for best accuracy)</div>
+      <div id="enrollShots" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+        <div style="width:56px;height:56px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.1rem;cursor:pointer" onclick="enrollCapture()" title="Capture">+</div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="enrollResult" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;margin-bottom:0.75rem">
+      <div style="font-size:1.5rem">✅</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;margin-top:0.25rem" id="enrollResultMsg">Enrolled!</div>
+    </div>
+
+    <!-- Tips -->
+    <div style="background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.1);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
+      💡 <strong style="color:var(--accent)">Tips:</strong> Good lighting · Face front · No glasses · Take front + slight left + slight right
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:0.75rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="enrollCapture()">📸 Capture Shot</button>
+      <button class="btn btn-primary" style="flex:1" id="enrollSaveBtn" onclick="saveEnrollment()" disabled>✅ Save Enrollment</button>
+    </div>
+    <button class="btn btn-danger" style="width:100%;margin-top:0.5rem" id="enrollDeleteBtn" onclick="deleteEnrollment()" style="display:none">🗑 Remove Enrollment</button>
+  </div>
+</div>
+
+<canvas id="enrollCanvas" style="display:none"></canvas>
+
+</body>
+</html>

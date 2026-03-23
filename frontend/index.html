@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendX — My Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0d12; --surface:#111620; --surface2:#161d2a; --border:#1e2a3a;
+  --accent:#00e5a0; --accent2:#3b82f6; --accent3:#f59e0b; --danger:#ef4444;
+  --text:#e8edf5; --muted:#5a6a7e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Instrument Sans',sans-serif; min-height:100vh; }
+body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: linear-gradient(rgba(0,229,160,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.02) 1px,transparent 1px);
+  background-size:40px 40px; }
+
+/* NAV */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(10,13,18,0.9); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem; height:60px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-left { display:flex; align-items:center; gap:0.75rem; }
+.nav-logo { height:34px; width:66px; border-radius:7px; object-fit:cover; }
+.nav-brand { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; }
+.nav-brand span { color:var(--accent); }
+.nav-div { width:1px; height:22px; background:var(--border); }
+.nav-emp { font-family:'DM Mono',monospace; font-size:0.75rem; }
+.nav-emp strong { color:var(--accent); }
+.nav-right { display:flex; align-items:center; gap:0.75rem; }
+.nav-tabs { display:flex; gap:0.25rem; background:var(--surface); border-radius:10px; padding:3px; }
+.nav-tab { padding:0.35rem 0.9rem; border-radius:7px; font-size:0.8rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--muted); transition:all 0.2s; font-family:'Instrument Sans',sans-serif; }
+.nav-tab.active { background:var(--surface2); color:var(--text); }
+.logout-btn { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--danger); font-family:'DM Mono',monospace; font-size:0.7rem; padding:5px 10px; border-radius:7px; cursor:pointer; }
+
+/* LAYOUT */
+.container { max-width:900px; margin:0 auto; padding:2rem; position:relative; z-index:1; }
+.page { display:none; }
+.page.active { display:block; animation:fadeUp 0.3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* CARD */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-bottom:1.25rem; }
+.card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+.dot.blue { background:var(--accent2); } .dot.amber { background:var(--accent3); }
+
+/* PUNCH CARD */
+.punch-card {
+  background:linear-gradient(135deg,#0d1f2d,#0a1520);
+  border:1px solid rgba(0,229,160,0.25); border-radius:20px; padding:2rem;
+  position:relative; overflow:hidden; margin-bottom:1.25rem;
+  box-shadow:0 0 50px rgba(0,229,160,0.08);
+}
+.punch-card::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 0%,rgba(0,229,160,0.06),transparent 70%); }
+.time-display { font-family:'Syne',sans-serif; font-size:3rem; font-weight:800; text-align:center; color:var(--accent); text-shadow:0 0 30px rgba(0,229,160,0.4); margin:0.5rem 0; letter-spacing:-0.02em; }
+.date-display { text-align:center; color:var(--muted); font-family:'DM Mono',monospace; font-size:0.82rem; }
+
+/* LOCATION BAR */
+.loc-bar { display:flex; align-items:center; gap:0.75rem; background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:0.65rem 1rem; margin:1rem 0; font-size:0.8rem; font-family:'DM Mono',monospace; }
+.loc-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); animation:blink 1.5s infinite; flex-shrink:0; }
+.loc-dot.red { background:var(--danger); animation:none; }
+.loc-dot.amber { background:var(--accent3); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* WEBCAM */
+.webcam-box { position:relative; border-radius:12px; overflow:hidden; border:2px solid var(--accent); background:var(--surface2); margin:0.75rem 0; display:none; }
+.webcam-box.show { display:block; }
+video { width:100%; max-height:200px; object-fit:cover; transform:scaleX(-1); display:block; }
+.cam-overlay { position:absolute; inset:0; pointer-events:none; }
+.cam-guide { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.cam-oval { width:100px; height:120px; border-radius:50%; border:2px dashed rgba(0,229,160,0.5); }
+.scan-bar { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),transparent); animation:scan 2s ease-in-out infinite; box-shadow:0 0 8px var(--accent); }
+@keyframes scan { 0%{top:10%} 50%{top:85%} 100%{top:10%} }
+.cam-label { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,0.7)); padding:0.4rem 0.75rem; font-family:'DM Mono',monospace; font-size:0.7rem; color:var(--accent); }
+
+/* SUCCESS / ERROR */
+.result-box { text-align:center; padding:1rem 0; display:none; }
+.result-box.show { display:block; }
+
+/* PUNCH BUTTONS */
+.punch-btn { width:100%; padding:0.9rem; border-radius:12px; border:none; font-family:'Syne',sans-serif; font-weight:800; font-size:0.95rem; cursor:pointer; transition:all 0.25s; margin-top:0.75rem; }
+.punch-in { background:linear-gradient(135deg,var(--accent),#00b87a); color:#000; box-shadow:0 4px 20px rgba(0,229,160,0.3); }
+.punch-in:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,229,160,0.4); }
+.punch-out { background:linear-gradient(135deg,var(--danger),#c13333); color:#fff; box-shadow:0 4px 20px rgba(239,68,68,0.25); }
+.punch-out:hover { transform:translateY(-2px); }
+.punch-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none !important; }
+.day-done { background:var(--surface2); border:1px solid var(--border); color:var(--muted); cursor:not-allowed; }
+
+/* PROGRESS */
+.prog-bar-wrap { margin-top:0.75rem; display:none; }
+.prog-bar-wrap.show { display:block; }
+.prog-label { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--muted); margin-bottom:0.3rem; }
+.prog-track { height:3px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+.prog-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:2px; width:0%; transition:width 0.5s ease; }
+
+/* TODAY GRID */
+.today-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; }
+.today-cell { background:var(--surface2); border-radius:10px; padding:1rem; }
+.today-lbl { font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.08em; }
+.today-val { font-family:'Syne',sans-serif; font-size:1.35rem; font-weight:800; margin-top:0.3rem; }
+
+/* HISTORY TABLE */
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th { font-family:'DM Mono',monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); padding:0.65rem 0.85rem; text-align:left; border-bottom:1px solid var(--border); }
+td { padding:0.8rem 0.85rem; border-bottom:1px solid rgba(30,42,58,0.5); font-size:0.83rem; }
+tr:last-child td { border:none; }
+.pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:0.68rem; font-weight:600; font-family:'DM Mono',monospace; }
+.pill-present { background:rgba(0,229,160,0.12); color:var(--accent); }
+.pill-late { background:rgba(245,158,11,0.12); color:var(--accent3); }
+.pill-absent { background:rgba(239,68,68,0.12); color:var(--danger); }
+
+/* MONTHLY STATS */
+.month-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1.25rem; }
+.mstat { background:var(--surface2); border-radius:10px; padding:0.9rem; text-align:center; }
+.mstat-val { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; }
+.mstat-lbl { font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace; margin-top:2px; }
+
+/* TOAST */
+.toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; background:var(--surface); border:1px solid var(--accent); border-radius:12px; padding:0.9rem 1.25rem; display:flex; align-items:center; gap:0.65rem; font-size:0.85rem; box-shadow:0 8px 28px rgba(0,229,160,0.2); transform:translateY(80px); opacity:0; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1); max-width:320px; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.err { border-color:var(--danger); box-shadow:0 8px 28px rgba(239,68,68,0.2); }
+
+/* CANVAS (hidden) */
+canvas { display:none; }
+
+@media(max-width:600px) {
+  nav { padding:0 1rem; }
+  .container { padding:1rem; }
+  .time-display { font-size:2.2rem; }
+  .month-stats { grid-template-columns:1fr 1fr; }
+  .nav-tabs { display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <img src="data:image/png;base64,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" class="nav-logo" alt="TrustWork">
+    <div class="nav-brand">Attend<span>X</span></div>
+    <div class="nav-div"></div>
+    <div class="nav-emp">Welcome, <strong id="navName">—</strong></div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('punch',this)">✋ Punch</button>
+      <button class="nav-tab" onclick="showPage('history',this)">📋 My Records</button>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">⏻ Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ══ PUNCH PAGE ══════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-punch">
+
+  <div class="punch-card">
+    <div style="position:relative;z-index:1">
+      <div class="date-display" id="dateDisp"></div>
+      <div class="time-display" id="clockDisp">00:00:00</div>
+      <div class="date-display" id="greetDisp" style="margin-bottom:1rem;color:var(--text);font-size:0.85rem"></div>
+
+      <!-- LOCATION -->
+      <div class="loc-bar">
+        <div class="loc-dot amber" id="locDot"></div>
+        <div style="flex:1"><span id="locText">Checking GPS…</span>
+        <div style="font-size:0.65rem;color:var(--accent3);margin-top:1px">📍 Verified at Punch-In &amp; Punch-Out</div></div>
+        <span style="color:var(--accent);font-weight:600" id="locDist">—</span>
+      </div>
+
+      <!-- WEBCAM -->
+      <div class="webcam-box" id="camBox">
+        <video id="punchVideo" autoplay muted playsinline></video>
+        <div class="cam-overlay">
+          <div class="cam-guide"><div class="cam-oval"></div></div>
+          <div class="scan-bar"></div>
+        </div>
+        <div class="cam-label">● LIVE · Look straight at camera</div>
+      </div>
+
+      <!-- CAMERA ERROR BOX -->
+      <div id="camErrBox" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:1rem;margin:0.75rem 0;text-align:center">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem">📷</div>
+        <div id="camErrMsg" style="font-size:0.8rem;color:var(--danger);margin-bottom:0.75rem;line-height:1.5"></div>
+        <button onclick="startCamera()" style="background:var(--accent);border:none;border-radius:8px;padding:0.5rem 1.25rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer">↺ Retry Camera</button>
+        <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:0.5rem">
+          Chrome: Address bar → 🔒 → Camera → Allow<br>
+          Edge: Address bar → 🔒 → Camera → Allow
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div class="result-box" id="successBox">
+        <div style="font-size:2rem">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;margin-top:0.35rem" id="successTitle">Punched In!</div>
+        <div style="font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:0.2rem" id="successDetail">—</div>
+      </div>
+      <div class="result-box" id="errorBox">
+        <div style="font-size:2rem">❌</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-top:0.35rem;color:var(--danger)" id="errorTitle">Failed</div>
+        <div style="font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:0.2rem" id="errorDetail">—</div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="prog-bar-wrap" id="progWrap">
+        <div class="prog-label" id="progLabel">Processing…</div>
+        <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+      </div>
+
+      <!-- BUTTONS -->
+      <button class="punch-btn punch-in"  id="btnIn"  onclick="doPunch('in')">⏵ PUNCH IN</button>
+      <button class="punch-btn punch-out" id="btnOut" onclick="doPunch('out')" style="display:none">⏹ PUNCH OUT</button>
+      <button class="punch-btn day-done"  id="btnDone" style="display:none">✅ Attendance Complete</button>
+    </div>
+  </div>
+
+  <!-- MY TODAY -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>My Today</div>
+    <div class="today-grid">
+      <div class="today-cell">
+        <div class="today-lbl">Punch In</div>
+        <div class="today-val" id="todayIn" style="color:var(--accent)">—</div>
+      </div>
+      <div class="today-cell">
+        <div class="today-lbl">Punch Out</div>
+        <div class="today-val" id="todayOut" style="color:var(--accent2)">—</div>
+      </div>
+      <div class="today-cell">
+        <div class="today-lbl">Hours Worked</div>
+        <div class="today-val" id="todayHours" style="color:var(--accent3)">0h 0m</div>
+      </div>
+      <div class="today-cell">
+        <div class="today-lbl">Status</div>
+        <div class="today-val" id="todayStatus" style="color:var(--muted);font-size:0.9rem">NOT STARTED</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /punch page -->
+
+<!-- ══ HISTORY PAGE ════════════════════════════════════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="card-title" style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-0.02em;margin-bottom:1.25rem">
+    My Attendance Records
+  </div>
+
+  <!-- MONTHLY STATS -->
+  <div class="month-stats">
+    <div class="mstat">
+      <div class="mstat-val" id="mPresent" style="color:var(--accent)">0</div>
+      <div class="mstat-lbl">Present</div>
+    </div>
+    <div class="mstat">
+      <div class="mstat-val" id="mLate" style="color:var(--accent3)">0</div>
+      <div class="mstat-lbl">Late</div>
+    </div>
+    <div class="mstat">
+      <div class="mstat-val" id="mAbsent" style="color:var(--danger)">0</div>
+      <div class="mstat-lbl">Absent</div>
+    </div>
+    <div class="mstat">
+      <div class="mstat-val" id="mHours" style="color:var(--accent2)">0h</div>
+      <div class="mstat-lbl">Total Hrs</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem">
+      <div class="card-title" style="margin:0"><span class="dot blue"></span>Last 30 Days</div>
+      <select id="histMonth" onchange="loadHistory()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.45rem 0.75rem;font-size:0.82rem;outline:none"></select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Punch In</th>
+            <th>Punch Out</th>
+            <th>Hours</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="histTable">
+          <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-family:'DM Mono',monospace">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<canvas id="punchCanvas"></canvas>
+<div class="toast" id="toast"><span id="tIcon">✅</span><div id="tMsg"></div></div>
+
+<script>
+const API   = '/api';
+const empId   = sessionStorage.getItem('employeeId');
+const empName = sessionStorage.getItem('employeeName');
+const empCode = sessionStorage.getItem('employeeCode');
+
+// Auth guard
+if (!empId) { window.location.href = 'login.html'; }
+
+// Set name in nav
+document.getElementById('navName').textContent = empName || 'Employee';
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockDisp').textContent =
+    now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});
+  document.getElementById('dateDisp').textContent =
+    now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kolkata'});
+  const hr  = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'})).getHours();
+  const tod = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greetDisp').textContent = tod + ', ' + (empName||'').split(' ')[0] + '!';
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── NAV ────────────────────────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (id === 'history') { initHistoryMonths(); loadHistory(); }
+}
+
+function doLogout() { sessionStorage.clear(); window.location.href = 'login.html'; }
+
+// ── CAMERA ─────────────────────────────────────────────────────────────────
+let camStream = null;
+async function startCamera() {
+  try {
+    // Check if browser supports getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showCamError('Camera API not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:640},height:{ideal:480},facingMode:'user'}
+    });
+    const video = document.getElementById('punchVideo');
+    video.srcObject = camStream;
+    await video.play().catch(() => {});
+    document.getElementById('camBox').classList.add('show');
+    document.getElementById('camErrBox').style.display = 'none';
+  } catch(e) {
+    console.error('Camera error:', e.name, e.message);
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+      showCamError('Camera blocked. Click the camera icon 📷 in your browser address bar → Allow → then click Retry.');
+    } else if (e.name === 'NotFoundError') {
+      showCamError('No camera found on this device.');
+    } else if (e.name === 'NotReadableError') {
+      showCamError('Camera is in use by another app. Close other apps and click Retry.');
+    } else {
+      showCamError('Camera error: ' + e.message + '. Click Retry.');
+    }
+  }
+}
+
+function showCamError(msg) {
+  const box = document.getElementById('camErrBox');
+  document.getElementById('camErrMsg').textContent = msg;
+  box.style.display = 'block';
+}
+
+function captureFrame() {
+  const v = document.getElementById('punchVideo');
+  const c = document.getElementById('punchCanvas');
+  c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(v, 0, 0);
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
+// ── GPS ─────────────────────────────────────────────────────────────────────
+let lastCoords = {lat: 17.3850, lon: 78.4867};
+function checkGPS() {
+  if (!navigator.geolocation) { setLoc(false,'GPS not supported','—'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    lastCoords = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+    setLoc(true, '✓ Location ready', 'OK');
+  }, () => {
+    setLoc(true, '✓ Location (simulated)', '~OK');
+  }, {timeout:8000});
+}
+function setLoc(ok, text, dist) {
+  const d = document.getElementById('locDot');
+  d.className = 'loc-dot' + (ok ? '' : ' red');
+  document.getElementById('locText').textContent = text;
+  document.getElementById('locDist').textContent = dist;
+}
+
+// ── PUNCH ───────────────────────────────────────────────────────────────────
+let punchInTime = null;
+
+async function doPunch(type) {
+  // Disable buttons
+  document.getElementById('btnIn').disabled  = true;
+  document.getElementById('btnOut').disabled = true;
+  document.getElementById('successBox').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
+  showProg(true, '📍 Getting location…', 20);
+
+  try {
+    // Step 1: GPS
+    const coords = await getGPSCoords();
+    showProg(true, '📷 Capturing face…', 45);
+    await sleep(600);
+
+    // Step 2: Capture
+    const img = captureFrame();
+    if (img.length < 5000) throw new Error('Camera not ready. Please allow camera access and try again.');
+    showProg(true, '🧠 Verifying identity…', 70);
+
+    // Step 3: API call
+    const res  = await fetch(API + '/attendance/punch', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        employee_id: empId,
+        image_base64: img,
+        latitude: coords.lat,
+        longitude: coords.lon,
+        punch_type: type,
+        method: 'face'
+      }),
+      signal: AbortSignal.timeout(25000)
+    });
+    showProg(true, '💾 Saving…', 90);
+    const data = await res.json();
+    await sleep(300);
+    showProg(false);
+
+    if (res.ok && data.success) {
+      // SUCCESS
+      document.getElementById('successBox').classList.add('show');
+      document.getElementById('successTitle').textContent = type === 'in' ? '✅ Punched In!' : '✅ Punched Out!';
+      const sim = data.similarity ? ' · Match ' + Math.round(data.similarity*100) + '%' : '';
+      document.getElementById('successDetail').textContent = data.time + ' IST' + sim;
+      updateTodayUI(type, data.time);
+      toast('✅', type === 'in' ? 'Punched In at ' + data.time + '! Have a great day 🎉' : 'Punched Out at ' + data.time + '! See you tomorrow 👋');
+      if (type === 'in') {
+        punchInTime = new Date();
+        document.getElementById('btnIn').style.display  = 'none';
+        document.getElementById('btnOut').style.display = 'block';
+        document.getElementById('btnOut').disabled = false;
+      } else {
+        document.getElementById('btnOut').style.display  = 'none';
+        document.getElementById('btnDone').style.display = 'block';
+      }
+    } else {
+      // API ERROR
+      showProg(false);
+      const code   = data?.detail?.code || '';
+      const msg    = data?.detail?.message || data?.detail || 'Something went wrong';
+      if (code === 'ALREADY_PUNCHED_IN') {
+        document.getElementById('btnIn').style.display  = 'none';
+        document.getElementById('btnOut').style.display = 'block';
+        document.getElementById('btnOut').disabled = false;
+        toast('ℹ️','Already punched in — click Punch Out when leaving');
+        loadTodayStatus();
+        return;
+      }
+      if (code === 'ALREADY_PUNCHED_OUT') {
+        document.getElementById('btnOut').style.display  = 'none';
+        document.getElementById('btnDone').style.display = 'block';
+        toast('✅','Attendance already complete for today!');
+        loadTodayStatus();
+        return;
+      }
+      document.getElementById('errorBox').classList.add('show');
+      document.getElementById('errorTitle').textContent  = code.replace(/_/g,' ') || 'Failed';
+      document.getElementById('errorDetail').textContent = msg;
+      toast('❌', msg, true);
+      document.getElementById('btnIn').disabled  = false;
+      document.getElementById('btnOut').disabled = false;
+    }
+  } catch(e) {
+    showProg(false);
+    const msg = e.name === 'TimeoutError' ? 'Timed out. Face recognition can take 5–10s.' : e.message;
+    document.getElementById('errorBox').classList.add('show');
+    document.getElementById('errorTitle').textContent  = 'Error';
+    document.getElementById('errorDetail').textContent = msg;
+    toast('❌', msg, true);
+    document.getElementById('btnIn').disabled  = false;
+    document.getElementById('btnOut').disabled = false;
+  }
+}
+
+async function getGPSCoords() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(lastCoords); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { lastCoords = {lat:pos.coords.latitude, lon:pos.coords.longitude}; resolve(lastCoords); },
+      ()  => resolve(lastCoords),
+      {timeout:6000, maximumAge:30000}
+    );
+  });
+}
+
+function updateTodayUI(type, timeStr) {
+  if (type === 'in') {
+    document.getElementById('todayIn').textContent = timeStr;
+    document.getElementById('todayStatus').textContent = 'PRESENT';
+    document.getElementById('todayStatus').style.color = 'var(--accent)';
+  } else {
+    document.getElementById('todayOut').textContent = timeStr;
+    document.getElementById('todayStatus').textContent = 'DONE';
+    document.getElementById('todayStatus').style.color = 'var(--accent2)';
+    if (punchInTime) {
+      const diff = new Date() - punchInTime;
+      document.getElementById('todayHours').textContent =
+        Math.floor(diff/3600000) + 'h ' + Math.floor((diff%3600000)/60000) + 'm';
+    }
+  }
+}
+
+// ── LOAD TODAY STATUS ──────────────────────────────────────────────────────
+async function loadTodayStatus() {
+  try {
+    const res  = await fetch(API + '/attendance/today');
+    const data = await res.json();
+    const mine = (data.logs||[]).find(l => l.employee_id === empId);
+    if (!mine) return;
+    const fmt = ts => ts ? new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : '—';
+    document.getElementById('todayIn').textContent  = fmt(mine.punch_in_time);
+    document.getElementById('todayStatus').textContent = (mine.status||'present').toUpperCase();
+    document.getElementById('todayStatus').style.color = mine.status==='late' ? 'var(--accent3)' : 'var(--accent)';
+    if (mine.punch_in_time) {
+      punchInTime = new Date(mine.punch_in_time);
+    }
+    if (mine.punch_out_time) {
+      document.getElementById('todayOut').textContent   = fmt(mine.punch_out_time);
+      document.getElementById('todayHours').textContent = mine.hours_worked ? mine.hours_worked+'h' : '—';
+      document.getElementById('todayStatus').textContent = 'DONE';
+      document.getElementById('todayStatus').style.color = 'var(--accent2)';
+      document.getElementById('btnIn').style.display   = 'none';
+      document.getElementById('btnOut').style.display  = 'none';
+      document.getElementById('btnDone').style.display = 'block';
+    } else if (mine.punch_in_time) {
+      document.getElementById('btnIn').style.display  = 'none';
+      document.getElementById('btnOut').style.display = 'block';
+      document.getElementById('btnOut').disabled = false;
+      const diff = new Date() - new Date(mine.punch_in_time);
+      document.getElementById('todayHours').textContent =
+        Math.floor(diff/3600000) + 'h ' + Math.floor((diff%3600000)/60000) + 'm';
+    }
+  } catch(e) { console.log('loadTodayStatus error:', e); }
+}
+
+// ── HISTORY ─────────────────────────────────────────────────────────────────
+function initHistoryMonths() {
+  const sel = document.getElementById('histMonth');
+  if (sel.options.length > 0) return;
+  const now = new Date();
+  for (let i=0; i<6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const v = d.toISOString().substring(0,7);
+    const l = d.toLocaleDateString('en-IN',{year:'numeric',month:'long'});
+    const o = document.createElement('option');
+    o.value=v; o.textContent=l; sel.appendChild(o);
+  }
+}
+
+async function loadHistory() {
+  const month = document.getElementById('histMonth').value;
+  const tbody = document.getElementById('histTable');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Loading…</td></tr>';
+  try {
+    const res  = await fetch(API + '/attendance/report/' + empId + '?month=' + month);
+    const data = await res.json();
+    const recs = data.records || [];
+    // Monthly stats
+    const present = recs.filter(r => r.status==='present').length;
+    const late    = recs.filter(r => r.status==='late').length;
+    const absent  = recs.filter(r => r.status==='absent').length;
+    const totalH  = recs.reduce((a,b) => a+(b.hours_worked||0), 0);
+    document.getElementById('mPresent').textContent = present+late;
+    document.getElementById('mLate').textContent    = late;
+    document.getElementById('mAbsent').textContent  = absent;
+    document.getElementById('mHours').textContent   = totalH.toFixed(1)+'h';
+    if (!recs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No records for this month</td></tr>';
+      return;
+    }
+    const fmt = ts => ts ? new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : '—';
+    tbody.innerHTML = recs.map(r => {
+      const st = r.status || 'present';
+      return `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.date}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${fmt(r.punch_in_time)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent2)">${fmt(r.punch_out_time)}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.hours_worked ? r.hours_worked+'h' : '—'}</td>
+        <td><span class="pill pill-${st}">${st.toUpperCase()}</span></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--danger);font-family:DM Mono,monospace">⚠ ${e.message}</td></tr>`;
+  }
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function showProg(show, label='', pct=0) {
+  const w = document.getElementById('progWrap');
+  w.classList.toggle('show', show);
+  if (show) {
+    document.getElementById('progLabel').textContent = label;
+    document.getElementById('progFill').style.width  = pct + '%';
+  }
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function toast(icon, msg, isErr=false) {
+  const t = document.getElementById('toast');
+  document.getElementById('tIcon').textContent = icon;
+  document.getElementById('tMsg').textContent  = msg;
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+startCamera();
+checkGPS();
+loadTodayStatus();
+</script>
+</body>
+</html>

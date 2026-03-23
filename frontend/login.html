@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendX — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0d12; --surface:#111620; --surface2:#161d2a; --border:#1e2a3a;
+  --accent:#00e5a0; --accent2:#3b82f6; --accent3:#f59e0b; --danger:#ef4444;
+  --text:#e8edf5; --muted:#5a6a7e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Instrument Sans',sans-serif;
+  min-height:100vh; display:flex; flex-direction:column;
+}
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: linear-gradient(rgba(0,229,160,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,160,0.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.blob { position:fixed; border-radius:50%; pointer-events:none; z-index:0; }
+.blob1 { width:500px; height:500px; background:radial-gradient(circle,rgba(0,229,160,0.07),transparent 70%); top:-150px; left:-150px; }
+.blob2 { width:400px; height:400px; background:radial-gradient(circle,rgba(59,130,246,0.07),transparent 70%); bottom:-100px; right:-100px; }
+
+/* HEADER */
+header {
+  position:relative; z-index:10;
+  background:rgba(10,13,18,0.9); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem; height:60px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.h-left { display:flex; align-items:center; gap:0.75rem; }
+.h-logo { height:36px; width:70px; border-radius:7px; object-fit:cover; }
+.h-brand { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; }
+.h-brand span { color:var(--accent); }
+.h-div { width:1px; height:24px; background:var(--border); }
+.h-contact { display:flex; flex-direction:column; gap:1px; }
+.h-contact a { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--accent2); text-decoration:none; }
+.h-contact a:hover { color:var(--accent); }
+.clock { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); }
+
+/* MAIN */
+main {
+  flex:1; position:relative; z-index:1;
+  display:flex; align-items:center; justify-content:center; padding:2rem;
+}
+.wrap { display:flex; gap:4rem; align-items:center; max-width:960px; width:100%; }
+
+/* BRAND */
+.brand { flex:1; }
+.brand-tag { display:inline-flex; align-items:center; gap:0.5rem; background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2); border-radius:20px; padding:4px 14px; font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--accent); margin-bottom:1.5rem; }
+.brand-title { font-family:'Syne',sans-serif; font-size:2.8rem; font-weight:800; letter-spacing:-0.04em; line-height:1.1; margin-bottom:1rem; }
+.brand-title span { color:var(--accent); }
+.brand-desc { color:var(--muted); font-size:0.88rem; line-height:1.7; max-width:360px; margin-bottom:1.75rem; }
+.features { display:flex; flex-direction:column; gap:0.6rem; }
+.feat { display:flex; align-items:center; gap:0.65rem; font-size:0.83rem; color:var(--muted); }
+.feat-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0; }
+
+/* LOGIN BOX */
+.login-box { width:360px; flex-shrink:0; }
+
+/* CARD */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; padding:1.5rem; margin-bottom:0.75rem;
+  transition:border-color 0.3s, box-shadow 0.3s;
+}
+.card:hover { border-color:rgba(0,229,160,0.2); }
+.card-head { display:flex; align-items:center; gap:0.85rem; margin-bottom:1.1rem; }
+.card-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+.ci-emp { background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.2); }
+.ci-adm { background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.2); }
+.card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; }
+.card-sub { font-size:0.75rem; color:var(--muted); font-family:'DM Mono',monospace; }
+
+/* INPUT */
+.input-wrap { position:relative; margin-bottom:0.6rem; }
+.inp {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:9px; color:var(--text); padding:0.7rem 2.8rem 0.7rem 0.9rem;
+  font-size:0.875rem; font-family:'Instrument Sans',sans-serif; outline:none; transition:border-color 0.2s;
+}
+.inp:focus { border-color:var(--accent); }
+.inp::placeholder { color:var(--muted); }
+.inp-btn {
+  position:absolute; right:7px; top:50%; transform:translateY(-50%);
+  background:var(--accent); border:none; border-radius:6px;
+  width:28px; height:28px; cursor:pointer; color:#000; font-size:1rem;
+  display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+}
+.inp-btn:hover { background:#00c988; }
+
+/* BTN */
+.btn {
+  width:100%; padding:0.75rem; border-radius:9px; border:none;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:0.88rem;
+  cursor:pointer; transition:all 0.2s;
+}
+.btn-emp { background:linear-gradient(135deg,var(--accent),#00b87a); color:#000; box-shadow:0 4px 14px rgba(0,229,160,0.25); }
+.btn-emp:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(0,229,160,0.35); }
+.btn-emp:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+/* ERROR */
+.err { font-size:0.75rem; color:var(--danger); font-family:'DM Mono',monospace; margin-top:0.35rem; min-height:1rem; }
+
+/* ADMIN TOGGLE */
+.adm-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; user-select:none;
+}
+.adm-arrow { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); transition:transform 0.2s; }
+.adm-arrow.open { transform:rotate(180deg); }
+
+/* PIN PAD */
+.pin-wrap { display:none; margin-top:1rem; }
+.pin-wrap.show { display:block; }
+.pin-dots { display:flex; justify-content:center; gap:0.65rem; margin-bottom:1rem; }
+.pin-dot { width:13px; height:13px; border-radius:50%; border:2px solid var(--border); transition:all 0.2s; }
+.pin-dot.filled { background:var(--accent3); border-color:var(--accent3); box-shadow:0 0 8px rgba(245,158,11,0.4); }
+.pin-dot.error { background:var(--danger); border-color:var(--danger); animation:shake 0.4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+.pin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.45rem; }
+.pin-key {
+  padding:0.75rem; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface2); font-family:'Syne',sans-serif;
+  font-size:1rem; font-weight:700; cursor:pointer; color:var(--text); transition:all 0.15s;
+}
+.pin-key:hover { border-color:var(--accent3); color:var(--accent3); }
+.pin-key:active { transform:scale(0.93); }
+.pin-key.del { color:var(--danger); font-size:0.82rem; }
+.pin-key.zero { grid-column:2; }
+.pin-err { font-size:0.72rem; color:var(--danger); font-family:'DM Mono',monospace; text-align:center; margin-top:0.5rem; min-height:1rem; }
+.pin-hint { font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace; text-align:center; margin-top:0.35rem; }
+
+/* LOADING */
+#loader {
+  position:fixed; inset:0; z-index:999;
+  background:rgba(10,13,18,0.92); backdrop-filter:blur(12px);
+  display:none; align-items:center; justify-content:center; flex-direction:column; gap:1rem;
+}
+#loader.show { display:flex; }
+.spinner { width:44px; height:44px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:spin 0.7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.load-txt { font-family:'DM Mono',monospace; font-size:0.82rem; color:var(--muted); }
+
+footer {
+  position:relative; z-index:10; text-align:center; padding:0.85rem;
+  font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--muted);
+  border-top:1px solid var(--border);
+}
+
+@media(max-width:750px) {
+  .wrap { flex-direction:column; gap:1.5rem; }
+  .brand-title { font-size:2rem; }
+  .login-box { width:100%; max-width:380px; }
+  .brand { text-align:center; }
+  .features { align-items:center; }
+  .brand-desc { margin:0 auto 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<header>
+  <div class="h-left">
+    <img src="data:image/png;base64,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" class="h-logo" alt="TrustWork">
+    <div class="h-brand">Attend<span>X</span></div>
+    <div class="h-div"></div>
+    <div class="h-contact">
+      <a href="mailto:support@trustwork.co.in">✉ support@trustwork.co.in</a>
+      <div style="display:flex;align-items:center;gap:0.4rem">
+        <a href="tel:+919353010107">☎ +91 93530 10107</a>
+        <a href="https://wa.me/919353010107" target="_blank" style="display:inline-flex">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="clock" id="clk"></div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- BRAND -->
+    <div class="brand">
+      <div class="brand-tag">● SMART ATTENDANCE SYSTEM</div>
+      <div class="brand-title">Work Simplified.<br><span>Compliance</span> Assured.</div>
+      <div class="brand-desc">AI-powered face recognition and GPS geofencing for accurate, effortless attendance management.</div>
+      <div class="features">
+        <div class="feat"><div class="feat-icon" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.2)">📷</div>Face Recognition · 99%+ accuracy</div>
+        <div class="feat"><div class="feat-icon" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2)">📍</div>GPS Geofencing · Verified both ways</div>
+        <div class="feat"><div class="feat-icon" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2)">📊</div>Real-time Dashboard · Live tracking</div>
+        <div class="feat"><div class="feat-icon" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2)">🔐</div>Secure · Your data, your server</div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="login-box">
+
+      <!-- EMPLOYEE CARD -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon ci-emp">👤</div>
+          <div>
+            <div class="card-title">Employee Login</div>
+            <div class="card-sub">Enter your employee code</div>
+          </div>
+        </div>
+        <div class="input-wrap">
+          <input class="inp" id="empCode" placeholder="e.g. EMP001 or EMP002"
+            onkeydown="if(event.key==='Enter')empLogin()"
+            oninput="document.getElementById('empErr').textContent=''">
+          <button class="inp-btn" onclick="empLogin()">→</button>
+        </div>
+        <div class="err" id="empErr"></div>
+        <button class="btn btn-emp" id="empBtn" onclick="empLogin()">Continue as Employee</button>
+      </div>
+
+      <!-- ADMIN CARD -->
+      <div class="card">
+        <div class="adm-toggle" onclick="togglePin()">
+          <div class="card-head" style="margin:0">
+            <div class="card-icon ci-adm">🛡️</div>
+            <div>
+              <div class="card-title">Admin Login</div>
+              <div class="card-sub">Click to enter PIN</div>
+            </div>
+          </div>
+          <div class="adm-arrow" id="arr">▼</div>
+        </div>
+
+        <div class="pin-wrap" id="pinWrap">
+          <div class="pin-dots">
+            <div class="pin-dot" id="d0"></div>
+            <div class="pin-dot" id="d1"></div>
+            <div class="pin-dot" id="d2"></div>
+            <div class="pin-dot" id="d3"></div>
+          </div>
+          <div class="pin-grid">
+            <button class="pin-key" onclick="pp('1')">1</button>
+            <button class="pin-key" onclick="pp('2')">2</button>
+            <button class="pin-key" onclick="pp('3')">3</button>
+            <button class="pin-key" onclick="pp('4')">4</button>
+            <button class="pin-key" onclick="pp('5')">5</button>
+            <button class="pin-key" onclick="pp('6')">6</button>
+            <button class="pin-key" onclick="pp('7')">7</button>
+            <button class="pin-key" onclick="pp('8')">8</button>
+            <button class="pin-key" onclick="pp('9')">9</button>
+            <button class="pin-key del" onclick="pdel()">⌫</button>
+            <button class="pin-key zero" onclick="pp('0')">0</button>
+            <button class="pin-key del" onclick="pclr()">✕</button>
+          </div>
+          <div class="pin-err" id="pinErr"></div>
+          <div class="pin-hint">Default PIN: 1234</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>© TrustWork Solutions · AttendX v1.0 · Confidential — for authorised use only</footer>
+
+<div id="loader"><div class="spinner"></div><div class="load-txt" id="loadTxt">Please wait…</div></div>
+
+<script>
+// ── CLOCK ──────────────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clk').textContent =
+    new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) + ' IST';
+}, 1000);
+
+// ── EMPLOYEE LOGIN ─────────────────────────────────────────────────────────
+async function empLogin() {
+  const code = document.getElementById('empCode').value.trim().toUpperCase();
+  if (!code) { document.getElementById('empErr').textContent = 'Please enter your employee code.'; return; }
+
+  const btn = document.getElementById('empBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Checking…';
+  document.getElementById('empErr').textContent = '';
+
+  try {
+    const res = await fetch('/api/employees/bycode/' + code);
+    const data = await res.json();
+
+    if (res.ok && data.id) {
+      sessionStorage.setItem('employeeId',   data.id);
+      sessionStorage.setItem('employeeName', data.name);
+      sessionStorage.setItem('employeeCode', data.emp_code);
+      sessionStorage.setItem('employeeDept', data.department || '');
+      document.getElementById('loadTxt').textContent = 'Welcome ' + data.name + '! Loading…';
+      document.getElementById('loader').classList.add('show');
+      setTimeout(() => { window.location.href = 'index.html'; }, 800);
+    } else {
+      const msg = (data.detail && data.detail.message) ? data.detail.message : ('Code "' + code + '" not found.');
+      document.getElementById('empErr').textContent = msg;
+      btn.disabled = false;
+      btn.textContent = 'Continue as Employee';
+    }
+  } catch(e) {
+    document.getElementById('empErr').textContent = 'Cannot reach server. Is Docker running?';
+    btn.disabled = false;
+    btn.textContent = 'Continue as Employee';
+  }
+}
+
+// ── ADMIN PIN ──────────────────────────────────────────────────────────────
+let buf = '';
+let pinVisible = false;
+
+function togglePin() {
+  pinVisible = !pinVisible;
+  document.getElementById('pinWrap').classList.toggle('show', pinVisible);
+  document.getElementById('arr').classList.toggle('open', pinVisible);
+}
+
+function pp(d) {
+  if (buf.length >= 4) return;
+  buf += d;
+  updateDots();
+  if (buf.length === 4) setTimeout(checkPin, 150);
+}
+function pdel() { buf = buf.slice(0,-1); updateDots(); }
+function pclr() { buf = ''; updateDots(); document.getElementById('pinErr').textContent = ''; }
+
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('d' + i);
+    d.className = 'pin-dot' + (i < buf.length ? ' filled' : '');
+  }
+}
+
+function checkPin() {
+  const stored = localStorage.getItem('adminPin') || '1234';
+  if (buf === stored) {
+    sessionStorage.setItem('adminAuth', 'true');
+    document.getElementById('loadTxt').textContent = 'Admin verified! Loading panel…';
+    document.getElementById('loader').classList.add('show');
+    setTimeout(() => { window.location.href = 'admin.html'; }, 600);
+  } else {
+    for (let i = 0; i < 4; i++) document.getElementById('d' + i).className = 'pin-dot error';
+    document.getElementById('pinErr').textContent = '✗ Wrong PIN. Try again.';
+    setTimeout(() => {
+      buf = '';
+      updateDots();
+      document.getElementById('pinErr').textContent = '';
+    }, 800);
+  }
+}
+
+// Keyboard support for PIN
+document.addEventListener('keydown', function(e) {
+  if (!pinVisible) return;
+  if (e.key >= '0' && e.key <= '9') pp(e.key);
+  else if (e.key === 'Backspace') pdel();
+  else if (e.key === 'Escape') { pclr(); togglePin(); }
+});
+</script>
+</body>
+</html>
