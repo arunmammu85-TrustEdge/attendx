@@ -1,0 +1,57 @@
+# ── AttendX — docker-compose.yml ─────────────────────────────────────────────
+# Runs the complete AttendX stack with a single command:
+#   docker compose up
+#
+# Services:
+#   attendx-api      → Python FastAPI backend (port 8000)
+#   attendx-frontend → Nginx serving the web UI (port 3000)
+
+version: "3.9"
+
+services:
+
+  # ── Backend API (InsightFace + FastAPI) ──────────────────────────────────
+  attendx-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: attendx-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # ── Copy from your .env file ─────────────────────────────────────────
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - OFFICE_LAT=${OFFICE_LAT:-17.3850}
+      - OFFICE_LON=${OFFICE_LON:-78.4867}
+      - FENCE_RADIUS=${FENCE_RADIUS:-500}
+      - FACE_THRESHOLD=${FACE_THRESHOLD:-0.42}
+      - TEST_MODE=true   # SET TO false IN PRODUCTION!
+    volumes:
+      # Persist downloaded InsightFace models (avoids re-download on restart)
+      - insightface_models:/root/.insightface
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── Frontend (Nginx serving the web UI) ──────────────────────────────────
+  attendx-frontend:
+    image: nginx:alpine
+    container_name: attendx-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - attendx-api
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  insightface_models:
+    driver: local
