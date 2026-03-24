@@ -418,12 +418,19 @@ def attendance_by_date(date: str):
         print(f"attendance_by_date error: {e}")
         raise HTTPException(500, {"code":"SERVER_ERROR","message":str(e)})
 
+
+def month_range(month_str: str):
+    """Returns (from_date, to_date) for a month string like '2026-03'"""
+    from calendar import monthrange
+    year, mon = int(month_str.split('-')[0]), int(month_str.split('-')[1])
+    last_day = monthrange(year, mon)[1]
+    return f"{month_str}-01", f"{month_str}-{last_day:02d}"
+
 @app.get("/attendance/monthly")
 def monthly_report(month: str):
     try:
         # month format: 2026-03
-        from_date = f"{month}-01"
-        to_date   = f"{month}-31"
+        from_date, to_date = month_range(month)
         logs = supabase.table("attendance_logs").select("*")             .gte("date", from_date).lte("date", to_date).execute()
         logs_data = logs.data or []
 
@@ -463,9 +470,152 @@ def monthly_report(month: str):
         print(f"monthly_report error: {e}")
         raise HTTPException(500, {"code":"SERVER_ERROR","message":str(e)})
 
+
+
+# ── Admin Manual Punch ────────────────────────────────────────────────────────
+class AdminPunchRequest(BaseModel):
+    employee_id: str
+    punch_type: str            # "in" or "out"
+    punch_time: Optional[str] = None   # ISO string, defaults to now
+    reason: Optional[str] = "Admin override"
+    admin_note: Optional[str] = None
+
+@app.post("/attendance/admin-punch")
+def admin_punch(req: AdminPunchRequest):
+    try:
+        from datetime import timedelta
+        now     = datetime.now(timezone.utc)
+        ist_now = now + timedelta(hours=5, minutes=30)
+        today   = ist_now.strftime("%Y-%m-%d")
+
+        # Use provided time or current time
+        if req.punch_time:
+            try:
+                punch_dt = datetime.fromisoformat(req.punch_time)
+                if punch_dt.tzinfo is None:
+                    punch_dt = punch_dt.replace(tzinfo=timezone.utc)
+            except:
+                punch_dt = now
+        else:
+            punch_dt = now
+
+        ist_punch = punch_dt + timedelta(hours=5, minutes=30)
+        punch_date = ist_punch.strftime("%Y-%m-%d")
+
+        print(f"Admin punch: {req.punch_type} for {req.employee_id} at {ist_punch.strftime('%H:%M')} IST")
+
+        existing = supabase.table("attendance_logs") \
+            .select("id, punch_in_time, punch_out_time") \
+            .eq("employee_id", req.employee_id) \
+            .eq("date", punch_date) \
+            .execute()
+
+        if req.punch_type == "in":
+            if existing.data:
+                # Update existing punch-in time
+                supabase.table("attendance_logs").update({
+                    "punch_in_time": punch_dt.isoformat(),
+                    "method": "admin",
+                    "notes": req.reason,
+                    "status": "present",
+                }).eq("id", existing.data[0]["id"]).execute()
+            else:
+                # Create new record
+                supabase.table("attendance_logs").insert({
+                    "employee_id":   req.employee_id,
+                    "date":          punch_date,
+                    "punch_in_time": punch_dt.isoformat(),
+                    "punch_in_lat":  OFFICE_LAT,
+                    "punch_in_lon":  OFFICE_LON,
+                    "punch_in_dist_m": 0,
+                    "method":        "admin",
+                    "notes":         req.reason,
+                    "status":        "present",
+                }).execute()
+
+        elif req.punch_type == "out":
+            if not existing.data:
+                raise HTTPException(400, {"code": "NOT_PUNCHED_IN",
+                    "message": "No punch-in record found for this date. Please punch-in first."})
+
+                # If punch-in exists, update punch-out
+            rec = existing.data[0]
+            pin_dt = datetime.fromisoformat(rec["punch_in_time"])
+            if pin_dt.tzinfo is None:
+                pin_dt = pin_dt.replace(tzinfo=timezone.utc)
+            hours = round((punch_dt - pin_dt).total_seconds() / 3600, 2)
+
+            supabase.table("attendance_logs").update({
+                "punch_out_time":  punch_dt.isoformat(),
+                "punch_out_lat":   OFFICE_LAT,
+                "punch_out_lon":   OFFICE_LON,
+                "punch_out_dist_m": 0,
+                "hours_worked":    max(0, hours),
+                "notes":           req.reason,
+            }).eq("id", rec["id"]).execute()
+
+        ist_time = ist_punch.strftime("%I:%M %p")
+        return {
+            "success": True,
+            "punch_type": req.punch_type,
+            "time": ist_time,
+            "date": punch_date,
+            "message": f"Admin punch-{'in' if req.punch_type=='in' else 'out'} recorded at {ist_time} IST"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(500, {"code": "SERVER_ERROR", "message": str(e)})
+
+
+# ── Employee WFH / Geofence Override ─────────────────────────────────────────
+class EmployeeGeoRequest(BaseModel):
+    allow_wfh:     bool = False
+    wfh_lat:       Optional[float] = None
+    wfh_lon:       Optional[float] = None
+    wfh_radius:    Optional[int]   = 500
+    wfh_address:   Optional[str]   = None
+
+@app.post("/employees/{employee_id}/geo-settings")
+def set_employee_geo(employee_id: str, req: EmployeeGeoRequest):
+    try:
+        update_data = {
+            "allow_wfh":   req.allow_wfh,
+            "wfh_lat":     req.wfh_lat,
+            "wfh_lon":     req.wfh_lon,
+            "wfh_radius":  req.wfh_radius,
+            "wfh_address": req.wfh_address,
+        }
+        supabase.table("employees").update(update_data).eq("id", employee_id).execute()
+        return {"success": True, "message": "Geofence settings updated"}
+    except Exception as e:
+        raise HTTPException(500, {"code": "SERVER_ERROR", "message": str(e)})
+
+@app.get("/employees/{employee_id}/geo-settings")
+def get_employee_geo(employee_id: str):
+    try:
+        res = supabase.table("employees") \
+            .select("id, name, allow_wfh, wfh_lat, wfh_lon, wfh_radius, wfh_address") \
+            .eq("id", employee_id).execute()
+        if not res.data:
+            raise HTTPException(404, {"message": "Employee not found"})
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, {"code": "SERVER_ERROR", "message": str(e)})
+
 @app.get("/attendance/report/{employee_id}")
 def employee_report(employee_id: str, month: Optional[str] = None):
-    query = supabase.table("attendance_logs").select("*").eq("employee_id", employee_id)
-    if month:
-        query = query.gte("date", f"{month}-01").lte("date", f"{month}-31")
-    return {"employee_id": employee_id, "records": query.order("date", desc=True).execute().data}
+    try:
+        query = supabase.table("attendance_logs").select("*").eq("employee_id", employee_id)
+        if month:
+            from_date, to_date = month_range(month)
+            query = query.gte("date", from_date).lte("date", to_date)
+        data = query.order("date", desc=True).execute()
+        return {"employee_id": employee_id, "records": data.data or []}
+    except Exception as e:
+        print(f"employee_report error: {e}")
+        raise HTTPException(500, {"code": "SERVER_ERROR", "message": str(e)})
