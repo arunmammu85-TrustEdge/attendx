@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(r) { r.forEach(function(reg) { reg.unregister(); }); });
+}
+if ('caches' in window) {
+  caches.keys().then(function(n) { n.forEach(function(name) { caches.delete(name); }); });
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AttendX — Login</title>
@@ -174,7 +182,7 @@ footer {
     <div class="h-brand">Attend<span>X</span></div>
     <div class="h-div"></div>
     <div class="h-contact">
-      <a href="mailto:support@trustwork.co.in">✉ support@trustwork.co.in</a>
+      <a href="mailto:info@trustworksolutions.in">✉ info@trustworksolutions.in</a>
       <div style="display:flex;align-items:center;gap:0.4rem">
         <a href="tel:+919353010107">☎ +91 93530 10107</a>
         <a href="https://wa.me/919353010107" target="_blank" style="display:inline-flex">
@@ -300,7 +308,7 @@ async function empLogin() {
   document.getElementById('empErr').textContent = '';
 
   try {
-    const res = await fetch('/api/employees/bycode/' + code);
+    const res = await fetch('https://trustwork-attendx.hf.space/employees/bycode/' + code);
     const data = await res.json();
 
     if (res.ok && data.id) {
@@ -369,12 +377,11 @@ function checkPin() {
 }
 
 // Keyboard support for PIN
-
 document.addEventListener('keydown', function(e) {
   if (!pinVisible) return;
   if (e.key >= '0' && e.key <= '9') pp(e.key);
   else if (e.key === 'Backspace') pdel();
-  else if (e.key === 'Escape') { pclr(); togglePin(); }
+  else if (e.key === 'Escape') pclr();
 });
 </script>
 </body>
