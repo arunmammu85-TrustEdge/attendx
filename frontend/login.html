@@ -82,7 +82,6 @@ main {
 .card-head { display:flex; align-items:center; gap:0.85rem; margin-bottom:1.1rem; }
 .card-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
 .ci-emp { background:rgba(0,229,160,0.12); border:1px solid rgba(0,229,160,0.2); }
-.ci-adm { background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.2); }
 .card-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; }
 .card-sub { font-size:0.75rem; color:var(--muted); font-family:'DM Mono',monospace; }
 
@@ -117,33 +116,9 @@ main {
 .err { font-size:0.75rem; color:var(--danger); font-family:'DM Mono',monospace; margin-top:0.35rem; min-height:1rem; }
 
 /* ADMIN TOGGLE */
-.adm-toggle {
-  display:flex; align-items:center; justify-content:space-between;
-  cursor:pointer; user-select:none;
-}
 .adm-arrow { font-family:'DM Mono',monospace; font-size:0.75rem; color:var(--muted); transition:transform 0.2s; }
 .adm-arrow.open { transform:rotate(180deg); }
 
-/* PIN PAD */
-.pin-wrap { display:none; margin-top:1rem; }
-.pin-wrap.show { display:block; }
-.pin-dots { display:flex; justify-content:center; gap:0.65rem; margin-bottom:1rem; }
-.pin-dot { width:13px; height:13px; border-radius:50%; border:2px solid var(--border); transition:all 0.2s; }
-.pin-dot.filled { background:var(--accent3); border-color:var(--accent3); box-shadow:0 0 8px rgba(245,158,11,0.4); }
-.pin-dot.error { background:var(--danger); border-color:var(--danger); animation:shake 0.4s; }
-@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-.pin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.45rem; }
-.pin-key {
-  padding:0.75rem; border-radius:8px; border:1px solid var(--border);
-  background:var(--surface2); font-family:'Syne',sans-serif;
-  font-size:1rem; font-weight:700; cursor:pointer; color:var(--text); transition:all 0.15s;
-}
-.pin-key:hover { border-color:var(--accent3); color:var(--accent3); }
-.pin-key:active { transform:scale(0.93); }
-.pin-key.del { color:var(--danger); font-size:0.82rem; }
-.pin-key.zero { grid-column:2; }
-.pin-err { font-size:0.72rem; color:var(--danger); font-family:'DM Mono',monospace; text-align:center; margin-top:0.5rem; min-height:1rem; }
-.pin-hint { font-size:0.68rem; color:var(--muted); font-family:'DM Mono',monospace; text-align:center; margin-top:0.35rem; }
 
 /* LOADING */
 #loader {
@@ -182,7 +157,7 @@ footer {
     <div class="h-brand">Attend<span>X</span></div>
     <div class="h-div"></div>
     <div class="h-contact">
-      <a href="mailto:info@trustworksolutions.in">✉ info@trustworksolutions.in</a>
+      <a href="/cdn-cgi/l/email-protection#71181f171e310503040205061e031a021e1d0405181e1f025f181f">✉ <span class="__cf_email__" data-cfemail="ddb4b3bbb29da9afa8aea9aab2afb6aeb2b1a8a9b4b2b3aef3b4b3">[email&#160;protected]</span></a>
       <div style="display:flex;align-items:center;gap:0.4rem">
         <a href="tel:+919353010107">☎ +91 93530 10107</a>
         <a href="https://wa.me/919353010107" target="_blank" style="display:inline-flex">
@@ -235,45 +210,6 @@ footer {
         <button class="btn btn-emp" id="empBtn" onclick="empLogin()">Continue as Employee</button>
       </div>
 
-      <!-- ADMIN CARD -->
-      <div class="card">
-        <div class="adm-toggle" onclick="togglePin()">
-          <div class="card-head" style="margin:0">
-            <div class="card-icon ci-adm">🛡️</div>
-            <div>
-              <div class="card-title">Admin Login</div>
-              <div class="card-sub">Click to enter PIN</div>
-            </div>
-          </div>
-          <div class="adm-arrow" id="arr">▼</div>
-        </div>
-
-        <div class="pin-wrap" id="pinWrap">
-          <div class="pin-dots">
-            <div class="pin-dot" id="d0"></div>
-            <div class="pin-dot" id="d1"></div>
-            <div class="pin-dot" id="d2"></div>
-            <div class="pin-dot" id="d3"></div>
-          </div>
-          <div class="pin-grid">
-            <button class="pin-key" onclick="pp('1')">1</button>
-            <button class="pin-key" onclick="pp('2')">2</button>
-            <button class="pin-key" onclick="pp('3')">3</button>
-            <button class="pin-key" onclick="pp('4')">4</button>
-            <button class="pin-key" onclick="pp('5')">5</button>
-            <button class="pin-key" onclick="pp('6')">6</button>
-            <button class="pin-key" onclick="pp('7')">7</button>
-            <button class="pin-key" onclick="pp('8')">8</button>
-            <button class="pin-key" onclick="pp('9')">9</button>
-            <button class="pin-key del" onclick="pdel()">⌫</button>
-            <button class="pin-key zero" onclick="pp('0')">0</button>
-            <button class="pin-key del" onclick="pclr()">✕</button>
-          </div>
-          <div class="pin-err" id="pinErr"></div>
-          <div class="pin-hint">Default PIN: 1234</div>
-        </div>
-      </div>
-
     </div>
   </div>
 </main>
@@ -282,7 +218,7 @@ footer {
 
 <div id="loader"><div class="spinner"></div><div class="load-txt" id="loadTxt">Please wait…</div></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── CLOCK ──────────────────────────────────────────────────────────────────
 function updateClock() {
   const now  = new Date();
@@ -326,63 +262,13 @@ async function empLogin() {
       btn.textContent = 'Continue as Employee';
     }
   } catch(e) {
-    document.getElementById('empErr').textContent = 'Cannot reach server. Is Docker running?';
+    document.getElementById('empErr').textContent = 'Cannot reach server. Please try again.';
     btn.disabled = false;
     btn.textContent = 'Continue as Employee';
   }
 }
 
-// ── ADMIN PIN ──────────────────────────────────────────────────────────────
-let buf = '';
-let pinVisible = false;
 
-function togglePin() {
-  pinVisible = !pinVisible;
-  document.getElementById('pinWrap').classList.toggle('show', pinVisible);
-  document.getElementById('arr').classList.toggle('open', pinVisible);
-}
-
-function pp(d) {
-  if (buf.length >= 4) return;
-  buf += d;
-  updateDots();
-  if (buf.length === 4) setTimeout(checkPin, 150);
-}
-function pdel() { buf = buf.slice(0,-1); updateDots(); }
-function pclr() { buf = ''; updateDots(); document.getElementById('pinErr').textContent = ''; }
-
-function updateDots() {
-  for (let i = 0; i < 4; i++) {
-    const d = document.getElementById('d' + i);
-    d.className = 'pin-dot' + (i < buf.length ? ' filled' : '');
-  }
-}
-
-function checkPin() {
-  const stored = localStorage.getItem('adminPin') || '1234';
-  if (buf === stored) {
-    sessionStorage.setItem('adminAuth', 'true');
-    document.getElementById('loadTxt').textContent = 'Admin verified! Loading panel…';
-    document.getElementById('loader').classList.add('show');
-    setTimeout(() => { window.location.href = 'admin.html'; }, 600);
-  } else {
-    for (let i = 0; i < 4; i++) document.getElementById('d' + i).className = 'pin-dot error';
-    document.getElementById('pinErr').textContent = '✗ Wrong PIN. Try again.';
-    setTimeout(() => {
-      buf = '';
-      updateDots();
-      document.getElementById('pinErr').textContent = '';
-    }, 800);
-  }
-}
-
-// Keyboard support for PIN
-document.addEventListener('keydown', function(e) {
-  if (!pinVisible) return;
-  if (e.key >= '0' && e.key <= '9') pp(e.key);
-  else if (e.key === 'Backspace') pdel();
-  else if (e.key === 'Escape') pclr();
-});
 </script>
 </body>
 </html>
