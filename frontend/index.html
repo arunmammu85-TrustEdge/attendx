@@ -130,12 +130,55 @@ tr:last-child td { border:none; }
 /* CANVAS (hidden) */
 canvas { display:none; }
 
+/* METHOD PICKER */
+.method-picker { display:none; margin:0.75rem 0; }
+.method-picker.show { display:block; }
+.method-picker-label { font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.08em; }
+.method-btns { display:flex; gap:0.6rem; }
+.method-btn {
+  flex:1; padding:0.75rem 0.5rem; border-radius:11px;
+  border:1px solid var(--border); background:var(--surface2);
+  color:var(--muted); font-family:'Syne',sans-serif; font-weight:700;
+  font-size:0.78rem; cursor:pointer; transition:all 0.2s;
+  display:flex; flex-direction:column; align-items:center; gap:0.3rem;
+}
+.method-btn .m-icon { font-size:1.5rem; }
+.method-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,0.06); }
+.method-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,0.1); box-shadow:0 0 12px rgba(0,229,160,0.15); }
+
+/* PIN KEYPAD */
+.pin-pad { display:none; margin:0.75rem 0; }
+.pin-pad.show { display:block; }
+.pin-display { display:flex; justify-content:center; gap:0.5rem; margin-bottom:0.85rem; }
+.pin-dot-emp { width:14px; height:14px; border-radius:50%; border:2px solid var(--border); transition:all 0.15s; }
+.pin-dot-emp.filled { background:var(--accent); border-color:var(--accent); box-shadow:0 0 6px rgba(0,229,160,0.5); }
+.pin-dot-emp.err { background:var(--danger); border-color:var(--danger); animation:shake 0.35s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+.pin-grid-emp { display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; }
+.pin-key-emp {
+  padding:0.9rem; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface2); font-family:'Syne',sans-serif;
+  font-size:1rem; font-weight:700; cursor:pointer; color:var(--text);
+  transition:all 0.15s; text-align:center;
+}
+.pin-key-emp:hover { border-color:var(--accent); background:rgba(0,229,160,0.08); color:var(--accent); }
+.pin-key-emp:active { transform:scale(0.94); }
+.pin-key-emp.del { color:var(--danger); }
+.pin-key-emp.zero { grid-column:2; }
+
+/* FINGERPRINT PROMPT */
+.fp-prompt { display:none; margin:0.75rem 0; text-align:center; padding:1.5rem; background:var(--surface2); border-radius:12px; border:1px solid var(--border); }
+.fp-prompt.show { display:block; }
+.fp-icon { font-size:3rem; margin-bottom:0.5rem; }
+.fp-status { font-family:'DM Mono',monospace; font-size:0.78rem; color:var(--muted); margin-top:0.4rem; }
+
 @media(max-width:600px) {
   nav { padding:0 1rem; }
   .container { padding:1rem; }
   .time-display { font-size:2.2rem; }
   .month-stats { grid-template-columns:1fr 1fr; }
   .nav-tabs { display:none; }
+  .method-btns { flex-wrap:wrap; }
 }
 </style>
 </head>
@@ -176,7 +219,13 @@ canvas { display:none; }
         <span style="color:var(--accent);font-weight:600" id="locDist">—</span>
       </div>
 
-      <!-- WEBCAM -->
+      <!-- METHOD PICKER — shown when >1 method enabled -->
+      <div class="method-picker" id="methodPicker">
+        <div class="method-picker-label">How do you want to punch?</div>
+        <div class="method-btns" id="methodBtns"></div>
+      </div>
+
+      <!-- WEBCAM — face method -->
       <div class="webcam-box" id="camBox">
         <video id="punchVideo" autoplay muted playsinline></video>
         <div class="cam-overlay">
@@ -184,6 +233,41 @@ canvas { display:none; }
           <div class="scan-bar"></div>
         </div>
         <div class="cam-label">● LIVE · Look straight at camera</div>
+      </div>
+
+      <!-- FINGERPRINT PROMPT -->
+      <div class="fp-prompt" id="fpPrompt">
+        <div class="fp-icon">👆</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem">Place Your Finger</div>
+        <div class="fp-status" id="fpStatus">Place finger on scanner to continue…</div>
+        <button onclick="retryFingerprint()" style="margin-top:0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.5rem 1.25rem;color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:0.82rem;cursor:pointer">↺ Retry Scan</button>
+      </div>
+
+      <!-- PIN KEYPAD — pin method -->
+      <div class="pin-pad" id="pinPad">
+        <div class="pin-display" id="pinDisplay">
+          <div class="pin-dot-emp" id="pd0"></div>
+          <div class="pin-dot-emp" id="pd1"></div>
+          <div class="pin-dot-emp" id="pd2"></div>
+          <div class="pin-dot-emp" id="pd3"></div>
+          <div class="pin-dot-emp" id="pd4"></div>
+          <div class="pin-dot-emp" id="pd5"></div>
+        </div>
+        <div class="pin-grid-emp">
+          <button class="pin-key-emp" onclick="pinPress('1')">1</button>
+          <button class="pin-key-emp" onclick="pinPress('2')">2</button>
+          <button class="pin-key-emp" onclick="pinPress('3')">3</button>
+          <button class="pin-key-emp" onclick="pinPress('4')">4</button>
+          <button class="pin-key-emp" onclick="pinPress('5')">5</button>
+          <button class="pin-key-emp" onclick="pinPress('6')">6</button>
+          <button class="pin-key-emp" onclick="pinPress('7')">7</button>
+          <button class="pin-key-emp" onclick="pinPress('8')">8</button>
+          <button class="pin-key-emp" onclick="pinPress('9')">9</button>
+          <button class="pin-key-emp del" onclick="pinDel()">⌫</button>
+          <button class="pin-key-emp zero" onclick="pinPress('0')">0</button>
+          <button class="pin-key-emp del" onclick="pinClear()">✕</button>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;margin-top:0.5rem" id="pinMsg"></div>
       </div>
 
       <!-- CAMERA ERROR BOX -->
@@ -303,7 +387,7 @@ canvas { display:none; }
 <div class="toast" id="toast"><span id="tIcon">✅</span><div id="tMsg"></div></div>
 
 <script>
-const API   = '/api';
+const API   = 'https://trustwork-attendx.hf.space';
 const empId   = sessionStorage.getItem('employeeId');
 const empName = sessionStorage.getItem('employeeName');
 const empCode = sessionStorage.getItem('employeeCode');
@@ -338,11 +422,94 @@ function showPage(id, btn) {
 
 function doLogout() { sessionStorage.clear(); window.location.href = 'login.html'; }
 
-// ── CAMERA ─────────────────────────────────────────────────────────────────
+// ── SETTINGS CACHE ────────────────────────────────────────────────────────
+let sysSettings   = {};
+let activeMethod  = 'face';   // currently selected auth method
+let pendingType   = null;     // 'in' or 'out' — set when punch button clicked
+
+async function loadSysSettings() {
+  try {
+    const res = await fetch(API + '/settings');
+    if (res.ok) sysSettings = await res.json();
+  } catch(e) { console.warn('Could not load settings:', e); }
+  buildMethodPicker();
+}
+
+function enabledMethods() {
+  const m = [];
+  if (sysSettings.face_enabled !== false)        m.push('face');
+  if (sysSettings.fingerprint_enabled === true)  m.push('thumb');
+  if (sysSettings.pin_enabled === true)          m.push('pin');
+  return m.length ? m : ['face'];  // fallback: always show face
+}
+
+function buildMethodPicker() {
+  const methods = enabledMethods();
+  const picker  = document.getElementById('methodPicker');
+  const btns    = document.getElementById('methodBtns');
+
+  if (methods.length === 1) {
+    // Only one method — hide picker, set directly
+    picker.classList.remove('show');
+    selectMethod(methods[0]);
+    return;
+  }
+
+  // Multiple methods — show picker
+  const labels = { face:'Face', thumb:'Fingerprint', pin:'PIN' };
+  const icons  = { face:'📷', thumb:'👆', pin:'🔢' };
+  btns.innerHTML = methods.map(m =>
+    `<button class="method-btn${m===activeMethod?' active':''}" onclick="selectMethod('${m}')">
+      <span class="m-icon">${icons[m]}</span>${labels[m]}
+    </button>`
+  ).join('');
+  picker.classList.add('show');
+  selectMethod(activeMethod in Object.fromEntries(methods.map(x=>[x,1])) ? activeMethod : methods[0]);
+}
+
+function selectMethod(method) {
+  activeMethod = method;
+
+  // Update picker button states
+  document.querySelectorAll('.method-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase().startsWith(
+      method === 'face' ? 'face' : method === 'thumb' ? 'finger' : 'pin'
+    ));
+  });
+
+  // Show/hide auth UIs
+  const camBox  = document.getElementById('camBox');
+  const camErr  = document.getElementById('camErrBox');
+  const fpBox   = document.getElementById('fpPrompt');
+  const pinBox  = document.getElementById('pinPad');
+
+  camBox.classList.toggle('show', method === 'face');
+  if (method !== 'face') camErr.style.display = 'none';
+  fpBox.classList.toggle('show', method === 'thumb');
+  pinBox.classList.toggle('show', method === 'pin');
+
+  if (method === 'face') {
+    if (!camStream) startCamera();
+  } else {
+    // Stop camera when not using face to free up resource
+    if (method !== 'face' && camStream) {
+      camStream.getTracks().forEach(t => t.stop());
+      camStream = null;
+    }
+    if (method === 'pin') {
+      pinClear();
+      document.getElementById('pinMsg').textContent = '';
+    }
+    if (method === 'thumb') {
+      document.getElementById('fpStatus').textContent = 'Place finger on scanner to continue…';
+    }
+  }
+}
+
+// ── CAMERA ─────────────────────────────────────────────────────────────
 let camStream = null;
 async function startCamera() {
   try {
-    // Check if browser supports getUserMedia
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showCamError('Camera API not supported in this browser. Try Chrome or Edge.');
       return;
@@ -370,85 +537,241 @@ async function startCamera() {
 }
 
 function showCamError(msg) {
-  const box = document.getElementById('camErrBox');
   document.getElementById('camErrMsg').textContent = msg;
-  box.style.display = 'block';
+  document.getElementById('camErrBox').style.display = 'block';
 }
 
 function captureFrame() {
   const v = document.getElementById('punchVideo');
   const c = document.getElementById('punchCanvas');
   c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(v, 0, 0);
+  c.getContext('2d').drawImage(v, 0, 0);
   return c.toDataURL('image/jpeg', 0.92);
 }
 
-// ── GPS ─────────────────────────────────────────────────────────────────────
-let lastCoords = {lat: 17.3850, lon: 78.4867};
-function checkGPS() {
-  if (!navigator.geolocation) { setLoc(false,'GPS not supported','—'); return; }
-  navigator.geolocation.getCurrentPosition(pos => {
-    lastCoords = {lat: pos.coords.latitude, lon: pos.coords.longitude};
-    setLoc(true, '✓ Location ready', 'OK');
-  }, () => {
-    setLoc(true, '✓ Location (simulated)', '~OK');
-  }, {timeout:8000});
+// ── PIN KEYPAD ─────────────────────────────────────────────────────────
+let pinValue = '';
+const PIN_LEN = 6;
+
+function pinPress(digit) {
+  if (pinValue.length >= PIN_LEN) return;
+  pinValue += digit;
+  updatePinDots();
+  if (pinValue.length === PIN_LEN && pendingType) {
+    // Auto-submit when all 6 digits entered
+    setTimeout(() => submitPunch(pendingType), 200);
+  }
 }
+function pinDel() {
+  pinValue = pinValue.slice(0, -1);
+  updatePinDots();
+}
+function pinClear() {
+  pinValue = '';
+  updatePinDots();
+}
+function updatePinDots() {
+  for (let i = 0; i < PIN_LEN; i++) {
+    document.getElementById('pd' + i).classList.toggle('filled', i < pinValue.length);
+    document.getElementById('pd' + i).classList.remove('err');
+  }
+}
+function pinError() {
+  for (let i = 0; i < PIN_LEN; i++) document.getElementById('pd' + i).classList.add('err');
+  setTimeout(() => { pinClear(); }, 700);
+}
+
+// ── FINGERPRINT ────────────────────────────────────────────────────────
+// Stub for scanner SDK integration.
+// Replace triggerFingerScan() body with your scanner SDK call.
+// The SDK should return a base64 template string on match.
+let fingerTemplate = null;
+
+async function triggerFingerScan() {
+  document.getElementById('fpStatus').textContent = 'Scanning… keep finger steady';
+  // TODO: Replace with real scanner SDK call e.g. MFS100.capture()
+  // For now returns a placeholder so UI flow works
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      fingerTemplate = 'PLACEHOLDER_TEMPLATE_FROM_SDK';
+      document.getElementById('fpStatus').textContent = '✓ Fingerprint captured — submitting…';
+      resolve(fingerTemplate);
+    }, 1500);
+  });
+}
+
+async function retryFingerprint() {
+  fingerTemplate = null;
+  document.getElementById('fpStatus').textContent = 'Place finger on scanner to continue…';
+  if (pendingType) {
+    await triggerFingerScan();
+    submitPunch(pendingType);
+  }
+}
+
+// ── GPS ─────────────────────────────────────────────────────────────────────
+let lastCoords = null;
+let gpsReady   = false;
+
+function checkGPS() {
+  if (!navigator.geolocation) {
+    setLoc(false, '✗ GPS not supported on this device', '✗');
+    return;
+  }
+  setLoc('pending', 'Getting GPS location…', '…');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      lastCoords = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+      gpsReady   = true;
+      const acc  = pos.coords.accuracy ? Math.round(pos.coords.accuracy) + 'm acc' : 'OK';
+      setLoc(true, '✓ Location verified', acc);
+    },
+    err => {
+      gpsReady = false;
+      const msg = err.code === 1 ? '✗ Location permission denied — allow in browser settings'
+                : err.code === 2 ? '✗ GPS unavailable — check device settings'
+                : '✗ GPS timeout — move to open area and retry';
+      setLoc(false, msg, '✗');
+    },
+    {timeout: 10000, maximumAge: 0, enableHighAccuracy: true}
+  );
+}
+
 function setLoc(ok, text, dist) {
   const d = document.getElementById('locDot');
-  d.className = 'loc-dot' + (ok ? '' : ' red');
+  d.className = ok === true ? 'loc-dot'
+              : ok === 'pending' ? 'loc-dot amber'
+              : 'loc-dot red';
   document.getElementById('locText').textContent = text;
   document.getElementById('locDist').textContent = dist;
 }
 
-// ── PUNCH ───────────────────────────────────────────────────────────────────
+async function getGPSCoords() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('GPS not supported on this device.'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        lastCoords = {lat: pos.coords.latitude, lon: pos.coords.longitude};
+        gpsReady   = true;
+        resolve(lastCoords);
+      },
+      err => {
+        const msg = err.code === 1
+          ? 'Location access denied. Please allow location permission and try again.'
+          : err.code === 2
+          ? 'GPS signal unavailable. Move to an open area and try again.'
+          : 'GPS timed out. Please try again.';
+        reject(new Error(msg));
+      },
+      {timeout: 10000, maximumAge: 0, enableHighAccuracy: true}
+    );
+  });
+}
+
+// ── PUNCH ENTRY POINTS (button clicks) ────────────────────────────────────
 let punchInTime = null;
 
 async function doPunch(type) {
-  // Disable buttons
+  pendingType = type;
   document.getElementById('btnIn').disabled  = true;
   document.getElementById('btnOut').disabled = true;
   document.getElementById('successBox').classList.remove('show');
   document.getElementById('errorBox').classList.remove('show');
-  showProg(true, '📍 Getting location…', 20);
+
+  // For fingerprint: trigger scan first, then submit
+  if (activeMethod === 'thumb') {
+    fingerTemplate = null;
+    showProg(true, '👆 Waiting for fingerprint…', 20);
+    try {
+      await triggerFingerScan();
+      await submitPunch(type);
+    } catch(e) {
+      punchFailed(e.message);
+    }
+    return;
+  }
+
+  // For PIN: just wait — pinPress() auto-submits when 6 digits entered
+  if (activeMethod === 'pin') {
+    pinClear();
+    document.getElementById('pinMsg').textContent = 'Enter your 6-digit PIN';
+    document.getElementById('btnIn').disabled  = false;
+    document.getElementById('btnOut').disabled = false;
+    return;
+  }
+
+  // Face — go straight to submit
+  await submitPunch(type);
+}
+
+// ── CORE PUNCH SUBMIT (shared by all methods) ─────────────────────────────
+async function submitPunch(type) {
+  document.getElementById('btnIn').disabled  = true;
+  document.getElementById('btnOut').disabled = true;
+  document.getElementById('successBox').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
 
   try {
-    // Step 1: GPS
+    // Step 1: GPS — required for all methods
+    showProg(true, '📍 Getting location…', 20);
     const coords = await getGPSCoords();
-    showProg(true, '📷 Capturing face…', 45);
-    await sleep(600);
 
-    // Step 2: Capture
-    const img = captureFrame();
-    if (img.length < 5000) throw new Error('Camera not ready. Please allow camera access and try again.');
-    showProg(true, '🧠 Verifying identity…', 70);
+    // Step 2: Build payload based on active method
+    let payload = {
+      employee_id: empId,
+      latitude: coords.lat,
+      longitude: coords.lon,
+      punch_type: type,
+      method: activeMethod
+    };
+
+    if (activeMethod === 'face') {
+      showProg(true, '📷 Capturing face…', 45);
+      await sleep(600);
+      const img = captureFrame();
+      if (img.length < 5000) throw new Error('Camera not ready. Please allow camera access and try again.');
+      payload.image_base64 = img;
+      showProg(true, '🧠 Verifying face…', 70);
+    } else if (activeMethod === 'thumb') {
+      if (!fingerTemplate) throw new Error('No fingerprint scanned. Please try again.');
+      payload.finger_template = fingerTemplate;
+      showProg(true, '👆 Verifying fingerprint…', 70);
+    } else if (activeMethod === 'pin') {
+      if (pinValue.length !== PIN_LEN) {
+        document.getElementById('pinMsg').textContent = 'Please enter all 6 digits';
+        document.getElementById('btnIn').disabled  = false;
+        document.getElementById('btnOut').disabled = false;
+        showProg(false);
+        return;
+      }
+      payload.punch_pin = pinValue;
+      showProg(true, '🔢 Verifying PIN…', 70);
+    }
 
     // Step 3: API call
+    showProg(true, '💾 Saving…', 88);
     const res  = await fetch(API + '/attendance/punch', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        employee_id: empId,
-        image_base64: img,
-        latitude: coords.lat,
-        longitude: coords.lon,
-        punch_type: type,
-        method: 'face'
-      }),
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(25000)
     });
-    showProg(true, '💾 Saving…', 90);
     const data = await res.json();
-    await sleep(300);
     showProg(false);
 
     if (res.ok && data.success) {
-      // SUCCESS
+      // Clear PIN after success
+      if (activeMethod === 'pin') pinClear();
+      fingerTemplate = null;
+
       document.getElementById('successBox').classList.add('show');
       document.getElementById('successTitle').textContent = type === 'in' ? '✅ Punched In!' : '✅ Punched Out!';
-      const sim = data.similarity ? ' · Match ' + Math.round(data.similarity*100) + '%' : '';
-      document.getElementById('successDetail').textContent = data.time + ' IST' + sim;
+      const sim = data.similarity ? ' · Match ' + Math.round(data.similarity * 100) + '%' : '';
+      const mLabel = {face:'Face', thumb:'Fingerprint', pin:'PIN'}[activeMethod] || '';
+      document.getElementById('successDetail').textContent = data.time + ' IST · ' + mLabel + sim;
       updateTodayUI(type, data.time);
       toast('✅', type === 'in' ? 'Punched In at ' + data.time + '! Have a great day 🎉' : 'Punched Out at ' + data.time + '! See you tomorrow 👋');
       if (type === 'in') {
@@ -461,10 +784,22 @@ async function doPunch(type) {
         document.getElementById('btnDone').style.display = 'block';
       }
     } else {
-      // API ERROR
       showProg(false);
-      const code   = data?.detail?.code || '';
-      const msg    = data?.detail?.message || data?.detail || 'Something went wrong';
+      const code = data?.detail?.code || '';
+      const msg  = data?.detail?.message || data?.detail || 'Something went wrong';
+
+      // PIN-specific error handling
+      if (activeMethod === 'pin') {
+        pinError();
+        document.getElementById('pinMsg').textContent = msg;
+        if (code !== 'PIN_LOCKED') {
+          document.getElementById('btnIn').disabled  = false;
+          document.getElementById('btnOut').disabled = false;
+        }
+        toast('❌', msg, true);
+        return;
+      }
+
       if (code === 'ALREADY_PUNCHED_IN') {
         document.getElementById('btnIn').style.display  = 'none';
         document.getElementById('btnOut').style.display = 'block';
@@ -480,34 +815,25 @@ async function doPunch(type) {
         loadTodayStatus();
         return;
       }
-      document.getElementById('errorBox').classList.add('show');
-      document.getElementById('errorTitle').textContent  = code.replace(/_/g,' ') || 'Failed';
-      document.getElementById('errorDetail').textContent = msg;
-      toast('❌', msg, true);
-      document.getElementById('btnIn').disabled  = false;
-      document.getElementById('btnOut').disabled = false;
+      punchFailed(msg, code);
     }
   } catch(e) {
     showProg(false);
-    const msg = e.name === 'TimeoutError' ? 'Timed out. Face recognition can take 5–10s.' : e.message;
-    document.getElementById('errorBox').classList.add('show');
-    document.getElementById('errorTitle').textContent  = 'Error';
-    document.getElementById('errorDetail').textContent = msg;
-    toast('❌', msg, true);
-    document.getElementById('btnIn').disabled  = false;
-    document.getElementById('btnOut').disabled = false;
+    const msg = e.name === 'TimeoutError' ? 'Timed out. Please try again.' : e.message;
+    punchFailed(msg);
   }
 }
 
-async function getGPSCoords() {
-  return new Promise(resolve => {
-    if (!navigator.geolocation) { resolve(lastCoords); return; }
-    navigator.geolocation.getCurrentPosition(
-      pos => { lastCoords = {lat:pos.coords.latitude, lon:pos.coords.longitude}; resolve(lastCoords); },
-      ()  => resolve(lastCoords),
-      {timeout:6000, maximumAge:30000}
-    );
-  });
+function punchFailed(msg, code='') {
+  document.getElementById('errorBox').classList.add('show');
+  document.getElementById('errorTitle').textContent  = code.replace(/_/g,' ') || 'Failed';
+  document.getElementById('errorDetail').textContent = msg;
+  toast('❌', msg, true);
+  document.getElementById('btnIn').disabled  = false;
+  document.getElementById('btnOut').disabled = false;
+  if (activeMethod === 'pin') {
+    document.getElementById('pinMsg').textContent = msg;
+  }
 }
 
 function updateTodayUI(type, timeStr) {
@@ -538,9 +864,7 @@ async function loadTodayStatus() {
     document.getElementById('todayIn').textContent  = fmt(mine.punch_in_time);
     document.getElementById('todayStatus').textContent = (mine.status||'present').toUpperCase();
     document.getElementById('todayStatus').style.color = mine.status==='late' ? 'var(--accent3)' : 'var(--accent)';
-    if (mine.punch_in_time) {
-      punchInTime = new Date(mine.punch_in_time);
-    }
+    if (mine.punch_in_time) punchInTime = new Date(mine.punch_in_time);
     if (mine.punch_out_time) {
       document.getElementById('todayOut').textContent   = fmt(mine.punch_out_time);
       document.getElementById('todayHours').textContent = mine.hours_worked ? mine.hours_worked+'h' : '—';
@@ -582,12 +906,9 @@ async function loadHistory() {
     const res     = await fetch(API + '/attendance/report/' + empId + '?month=' + month);
     const rawText = await res.text();
     let data = {};
-    try { data = JSON.parse(rawText); } catch(e) {
-      throw new Error('Server error — check Docker logs');
-    }
+    try { data = JSON.parse(rawText); } catch(e) { throw new Error('Server error — check Docker logs'); }
     if (!res.ok) throw new Error(data?.detail?.message || data?.message || 'Failed: ' + res.status);
     const recs = data.records || [];
-    // Monthly stats
     const present = recs.filter(r => r.status==='present').length;
     const late    = recs.filter(r => r.status==='late').length;
     const absent  = recs.filter(r => r.status==='absent').length;
@@ -601,6 +922,7 @@ async function loadHistory() {
       return;
     }
     const fmt = ts => ts ? new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}) : '—';
+    const mLabel = {face:'👤',thumb:'👆',pin:'🔢',admin:'🛡',dual:'🔀'};
     tbody.innerHTML = recs.map(r => {
       const st = r.status || 'present';
       return `<tr>
@@ -608,7 +930,7 @@ async function loadHistory() {
         <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${fmt(r.punch_in_time)}</td>
         <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent2)">${fmt(r.punch_out_time)}</td>
         <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.hours_worked ? r.hours_worked+'h' : '—'}</td>
-        <td><span class="pill pill-${st}">${st.toUpperCase()}</span></td>
+        <td><span class="pill pill-${st}">${(mLabel[r.method]||'')} ${st.toUpperCase()}</span></td>
       </tr>`;
     }).join('');
   } catch(e) {
@@ -637,7 +959,7 @@ function toast(icon, msg, isErr=false) {
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-startCamera();
+loadSysSettings();   // fetches /settings → builds method picker → starts camera if face enabled
 checkGPS();
 loadTodayStatus();
 </script>
