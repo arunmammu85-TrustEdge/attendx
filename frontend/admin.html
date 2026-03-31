@@ -700,22 +700,26 @@ tr:hover td { background:rgba(255,255,255,0.02); }
       <div class="page-sub" id="attDateSub">// Today's records</div>
     </div>
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
-      <input class="search-input" id="attSearch" placeholder="🔍 Search name or code…" oninput="renderAttendance()" style="width:220px">
       <input type="date" id="attDate" onchange="loadAttendance()" style="padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
-      <select id="attDeptFilter" onchange="renderAttendance()" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
-        <option value="">All Departments</option>
-      </select>
       <button class="btn btn-primary btn-sm" onclick="openManualPunchModal()">✋ Manual Punch</button>
       <button class="btn btn-export" onclick="exportCSV()">⬇ Export CSV</button>
     </div>
   </div>
 
   <!-- SUMMARY PILLS -->
-  <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
+  <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap">
     <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">✅ Present: <strong id="sumPresent" style="color:var(--accent)">0</strong></div>
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">⏰ Late: <strong id="sumLate" style="color:var(--accent3)">0</strong></div>
     <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">🚫 Absent: <strong id="sumAbsent" style="color:var(--danger)">0</strong></div>
     <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:0.6rem 1.25rem;font-family:'DM Mono',monospace;font-size:0.8rem">⏱ Avg Hours: <strong id="sumHours" style="color:var(--accent2)">0h</strong></div>
+  </div>
+
+  <!-- SEARCH + FILTER BAR -->
+  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem">
+    <input class="search-input" id="attSearch" placeholder="🔍 Search name or code…" oninput="renderAttendance()" style="width:220px">
+    <select id="attDeptFilter" onchange="renderAttendance()" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
+      <option value="">All Departments</option>
+    </select>
   </div>
 
   <div class="card">
@@ -1710,6 +1714,14 @@ async function loadAttendance() {
     const res  = await fetch(`${API_BASE}/attendance/date/${date}`);
     const data = await res.json();
     attData = data.logs || [];
+
+    // Populate dept dropdown from data
+    const deptSel  = document.getElementById('attDeptFilter');
+    const prevDept = deptSel.value;
+    const depts    = [...new Set(attData.map(l => l.department).filter(Boolean))].sort();
+    deptSel.innerHTML = '<option value="">All Departments</option>' +
+      depts.map(d => `<option value="${d}"${d===prevDept?' selected':''}>${d}</option>`).join('');
+
     renderAttendance();
     // Update summary
     const present = attData.filter(l => l.status === 'present').length;
