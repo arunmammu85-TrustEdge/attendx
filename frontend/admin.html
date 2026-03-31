@@ -1210,7 +1210,13 @@ function showPage(id, btn) {
   if (id==='addemp')     initAddEmp();
   if (id==='enrollment') { loadEnrollmentList(); }
   if (id==='attendance') {
-    if (!allEmployees || !allEmployees.length) loadEmployees().catch(()=>{});
+    // lightweight pre-fetch just for emp_code lookup — avoids firing all auth-status calls
+    if (!allEmployees || !allEmployees.length) {
+      fetch(API_BASE + '/employees')
+        .then(r => r.ok ? r.json() : [])
+        .then(data => { if (!allEmployees || !allEmployees.length) allEmployees = data; })
+        .catch(() => {});
+    }
     initAttendance();
   }
   if (id==='reports')    initReports();
