@@ -36,7 +36,8 @@ nav {
 .nav-tabs { display:flex; gap:0.25rem; background:var(--surface); border-radius:10px; padding:3px; }
 .nav-tab { padding:0.35rem 0.9rem; border-radius:7px; font-size:0.8rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--muted); transition:all 0.2s; font-family:'Instrument Sans',sans-serif; }
 .nav-tab.active { background:var(--surface2); color:var(--text); }
-.logout-btn { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--danger); font-family:'DM Mono',monospace; font-size:0.7rem; padding:5px 10px; border-radius:7px; cursor:pointer; }
+.logout-btn { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--danger); font-family:'DM Mono',monospace; font-size:0.7rem; padding:5px 10px; border-radius:7px; cursor:pointer; transition:all 0.2s; }
+.logout-btn:hover { background:rgba(239,68,68,0.2); }
 
 /* LAYOUT */
 .container { max-width:900px; margin:0 auto; padding:2rem; position:relative; z-index:1; }
@@ -193,7 +194,7 @@ canvas { display:none; }
 @media(max-width:600px) {
   nav { padding:0 1rem; }
   .nav-tabs { display:none; }
-  .logout-btn { font-size:0.65rem; padding:4px 8px; }
+  .logout-btn { display:none; }
   .nav-emp { display:none; }
   .nav-div { display:none; }
   .container { padding:1rem; padding-bottom:5rem; }
@@ -223,7 +224,7 @@ canvas { display:none; }
       <button class="nav-tab active" onclick="showPage('punch',this)">✋ Punch</button>
       <button class="nav-tab" onclick="showPage('history',this)">📋 My Records</button>
     </div>
-    <button class="logout-btn" onclick="doLogout()">⏻ Logout</button>
+    <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
   </div>
 </nav>
 
@@ -235,8 +236,8 @@ canvas { display:none; }
   <button class="bottom-nav-btn" id="bnHistory" onclick="showPage('history',this,'bn')">
     <span class="bn-icon">📋</span>Records
   </button>
-  <button class="bottom-nav-btn" onclick="doLogout()">
-    <span class="bn-icon">⏻</span>Logout
+  <button class="bottom-nav-btn" onclick="doLogout()" style="color:var(--danger)">
+    <span class="bn-icon">🚪</span>Logout
   </button>
 </div>
 
