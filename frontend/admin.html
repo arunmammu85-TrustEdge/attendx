@@ -547,7 +547,10 @@ tr:hover td { background:rgba(255,255,255,0.02); }
       <div class="page-title">Enrollment</div>
       <div class="page-sub">// Register face, fingerprint &amp; PIN for each employee</div>
     </div>
-    <button class="btn btn-secondary btn-sm" onclick="loadEnrollmentList()">↺ Refresh</button>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+      <input class="search-input" id="enrollSearch" placeholder="🔍 Search name or code…" oninput="renderEnrollList()" style="width:220px">
+      <button class="btn btn-secondary btn-sm" onclick="loadEnrollmentList()">↺ Refresh</button>
+    </div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
@@ -2289,12 +2292,16 @@ function filterEnrollList(f, btn) {
 function renderEnrollList() {
   const list   = document.getElementById('enrollEmpList');
   const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+  const q      = (document.getElementById('enrollSearch')?.value || '').trim().toLowerCase();
   let   emps   = epAllEmps;
   if (epFilter === 'pending') emps = emps.filter(e => !e.enrolled);
-  if (epFilter === 'done')    emps = emps.filter(e => e.enrolled);
+  if (epFilter === 'done')    emps = emps.filter(e =>  e.enrolled);
+  if (q) emps = emps.filter(e =>
+    e.name.toLowerCase().includes(q) || (e.emp_code || '').toLowerCase().includes(q)
+  );
 
   if (!emps.length) {
-    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${epFilter==='done'?'No employees with any method enrolled yet':epFilter==='pending'?'All employees have at least one method enrolled ✅':'No employees found'}</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${q?'No match for &quot;'+q+'&quot;':epFilter==='done'?'No employees with any method enrolled yet':epFilter==='pending'?'All employees have at least one method enrolled ✅':'No employees found'}</div>`;
     return;
   }
 
