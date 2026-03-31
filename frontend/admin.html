@@ -270,59 +270,16 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 </head>
 <body>
 
-<!-- ══ ADMIN PIN OVERLAY ═══════════════════════════════════════════════════ -->
-<div id="adminPinOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,13,18,0.97);backdrop-filter:blur(20px);align-items:center;justify-content:center">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:320px;text-align:center;box-shadow:0 0 60px rgba(0,229,160,0.1)">
-    <div style="font-size:2.5rem;margin-bottom:0.75rem">🛡️</div>
-    <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:0.25rem">Admin Access</div>
-    <div style="color:var(--muted);font-size:0.78rem;font-family:'DM Mono',monospace;margin-bottom:1.5rem">Enter your 4-digit PIN to continue</div>
-    <div style="display:flex;justify-content:center;gap:0.75rem;margin-bottom:1.5rem">
-      <div id="opd0" class="pin-dot"></div>
-      <div id="opd1" class="pin-dot"></div>
-      <div id="opd2" class="pin-dot"></div>
-      <div id="opd3" class="pin-dot"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:0.75rem">
-      <button class="pin-key" onclick="adminPinPress('1')">1</button>
-      <button class="pin-key" onclick="adminPinPress('2')">2</button>
-      <button class="pin-key" onclick="adminPinPress('3')">3</button>
-      <button class="pin-key" onclick="adminPinPress('4')">4</button>
-      <button class="pin-key" onclick="adminPinPress('5')">5</button>
-      <button class="pin-key" onclick="adminPinPress('6')">6</button>
-      <button class="pin-key" onclick="adminPinPress('7')">7</button>
-      <button class="pin-key" onclick="adminPinPress('8')">8</button>
-      <button class="pin-key" onclick="adminPinPress('9')">9</button>
-      <button class="pin-key" style="color:var(--danger)" onclick="adminPinDel()">⌫</button>
-      <button class="pin-key" style="grid-column:2" onclick="adminPinPress('0')">0</button>
-      <button class="pin-key" style="color:var(--danger)" onclick="adminPinClear()">✕</button>
-    </div>
-    <div id="overlayPinErr" style="font-size:0.75rem;color:var(--danger);font-family:'DM Mono',monospace;min-height:1.1rem;margin-bottom:0.75rem"></div>
-    <a href="login.html" style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-decoration:none;opacity:0.7">← Back to Employee Login</a>
-  </div>
-</div>
-
-
 <!-- ══ NAV ════════════════════════════════════════════════════════════════ -->
 <nav>
   <div style="display:flex;align-items:center;gap:0.75rem">
-    <img src="data:image/png;base64,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" style="height:34px;width:66px;border-radius:7px;object-fit:cover" alt="TrustWork">
     <div class="logo">Attend<span>X</span> <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ Admin</span></div>
-    <div style="width:1px;height:22px;background:var(--border)"></div>
-    <div style="display:flex;flex-direction:column;gap:1px">
-      <a href="/cdn-cgi/l/email-protection#8feefbfbeae1ebeee1eceacffbfdfafcfbf8e0fde4a1ece0a1e6e1" style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent2);text-decoration:none">✉ <span class="__cf_email__" data-cfemail="2b4a5f5f4e454f4a45484e6b5f595e585f5c445940054844054245">[email&#160;protected]</span></a>
-      <div style="display:flex;align-items:center;gap:0.4rem">
-        <a href="tel:+919353010107" style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent2);text-decoration:none">☎ +91 93530 10107</a>
-        <a href="https://wa.me/919353010107" target="_blank" style="display:inline-flex">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        </a>
-      </div>
-    </div>
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
     <button class="nav-tab" onclick="showPage('employees',this)">👥 Employees</button>
     <button class="nav-tab" onclick="showPage('addemp',this)">➕ Add Employee</button>
-    <button class="nav-tab" onclick="showPage('enrollment',this)">📷 Face Enrollment</button>
+    <button class="nav-tab" onclick="showPage('enrollment',this)">🔐 Enrollment</button>
     <button class="nav-tab" onclick="showPage('attendance',this)">📋 Attendance</button>
     <button class="nav-tab" onclick="showPage('reports',this)">📈 Reports</button>
     <button class="nav-tab" onclick="showPage('pinsettings',this)">⚙️ Settings</button>
@@ -467,17 +424,15 @@ tr:hover td { background:rgba(255,255,255,0.02); }
           <tr>
             <th>Employee</th>
             <th>Code</th>
-            <th>Department</th>
-            <th>Email</th>
             <th>Phone</th>
             <th>Shift</th>
-            <th>Face</th>
+            <th>Auth</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody id="empTable">
-          <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Loading employees…</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Loading employees…</td></tr>
         </tbody>
       </table>
     </div>
@@ -589,8 +544,8 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 <div class="page" id="page-enrollment">
   <div class="page-header">
     <div>
-      <div class="page-title">Face Enrollment</div>
-      <div class="page-sub">// Register employee faces for biometric attendance</div>
+      <div class="page-title">Enrollment</div>
+      <div class="page-sub">// Register face, fingerprint &amp; PIN for each employee</div>
     </div>
     <button class="btn btn-secondary btn-sm" onclick="loadEnrollmentList()">↺ Refresh</button>
   </div>
@@ -603,8 +558,8 @@ tr:hover td { background:rgba(255,255,255,0.02); }
         <div class="card-title" style="margin:0"><span class="dot"></span>Employees</div>
         <div style="display:flex;gap:0.5rem">
           <button id="filterAll" class="btn btn-secondary btn-sm" onclick="filterEnrollList('all',this)" style="border-color:var(--accent);color:var(--accent)">All</button>
-          <button id="filterPending" class="btn btn-secondary btn-sm" onclick="filterEnrollList('pending',this)">⏳ Pending</button>
-          <button id="filterDone" class="btn btn-secondary btn-sm" onclick="filterEnrollList('done',this)">✓ Done</button>
+          <button id="filterPending" class="btn btn-secondary btn-sm" onclick="filterEnrollList('pending',this)">○ None enrolled</button>
+          <button id="filterDone" class="btn btn-secondary btn-sm" onclick="filterEnrollList('done',this)">● Any enrolled</button>
         </div>
       </div>
 
@@ -626,17 +581,15 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 
     <!-- RIGHT: ENROLLMENT PANEL -->
     <div class="card">
-      <div class="card-title"><span class="dot blue"></span>Enrollment Camera</div>
+      <div class="card-title"><span class="dot blue"></span>Enrollment Panel</div>
 
-      <!-- No selection state -->
       <div id="enrollNoSel" style="text-align:center;padding:2rem 0;color:var(--muted)">
         <div style="font-size:2.5rem;margin-bottom:0.5rem">👈</div>
         <div style="font-family:'DM Mono',monospace;font-size:0.8rem">Select an employee from the list to enroll</div>
       </div>
 
-      <!-- Enrollment panel (shown when employee selected) -->
       <div id="enrollPanel" style="display:none">
-        <!-- Selected employee info -->
+        <!-- Employee info bar -->
         <div style="display:flex;align-items:center;gap:0.85rem;background:var(--surface2);border-radius:10px;padding:0.85rem;margin-bottom:1rem">
           <div id="epAvatar" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0"></div>
           <div style="flex:1">
@@ -646,44 +599,92 @@ tr:hover td { background:rgba(255,255,255,0.02); }
           <div id="epStatus" style="font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px"></div>
         </div>
 
-        <!-- Webcam -->
-        <div id="epCamBox" style="position:relative;border-radius:11px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
-          <video id="epVideo" autoplay muted playsinline style="width:100%;max-height:180px;object-fit:cover;transform:scaleX(-1);display:block"></video>
-          <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
-            <div style="width:90px;height:110px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
-            <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+        <!-- Method tabs -->
+        <div style="display:flex;gap:0.4rem;margin-bottom:1rem;background:var(--surface2);border-radius:9px;padding:4px">
+          <button id="epTab_face"   onclick="epSwitchTab('face')"   style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:var(--surface);color:var(--text)">📷 Face</button>
+          <button id="epTab_finger" onclick="epSwitchTab('finger')" style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted)">👆 Finger</button>
+          <button id="epTab_pin"    onclick="epSwitchTab('pin')"    style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted)">🔢 PIN</button>
+        </div>
+
+        <!-- FACE PANE -->
+        <div id="epPane_face">
+          <div id="epCamBox" style="position:relative;border-radius:11px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
+            <video id="epVideo" autoplay muted playsinline style="width:100%;max-height:180px;object-fit:cover;transform:scaleX(-1);display:block"></video>
+            <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
+              <div style="width:90px;height:110px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
+              <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+            </div>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.35rem 0.7rem;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent)">● LIVE · Look straight at camera</div>
           </div>
-          <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.35rem 0.7rem;font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent)">● LIVE · Look straight at camera</div>
+          <div id="epCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:9px;padding:0.85rem;text-align:center;margin-bottom:0.75rem">
+            <div id="epCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.5rem;line-height:1.5"></div>
+            <button onclick="startEpCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.35rem">SHOTS CAPTURED <span id="epShotCount" style="color:var(--accent)">0</span>/3</div>
+            <div id="epShots" style="display:flex;gap:0.35rem;flex-wrap:wrap"></div>
+          </div>
+          <div id="epSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+            <div style="font-size:1.3rem">✅</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem" id="epSuccessMsg">Enrolled!</div>
+          </div>
+          <div style="display:flex;gap:0.6rem;margin-bottom:0.5rem">
+            <button class="btn btn-secondary" style="flex:1;font-size:0.82rem" onclick="epCapture()">📸 Capture</button>
+            <button class="btn btn-primary" style="flex:1;font-size:0.82rem" id="epSaveBtn" onclick="epSave()" disabled>✅ Enroll Face</button>
+          </div>
+          <button id="epDeleteBtn" class="btn btn-danger" style="width:100%;font-size:0.82rem;display:none" onclick="epDelete()">🗑 Remove Face</button>
         </div>
 
-        <!-- Camera error -->
-        <div id="epCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:9px;padding:0.85rem;text-align:center;margin-bottom:0.75rem">
-          <div id="epCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.5rem;line-height:1.5"></div>
-          <button onclick="startEpCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
+        <!-- FINGER PANE -->
+        <div id="epPane_finger" style="display:none">
+          <div style="text-align:center;padding:1.5rem;background:var(--surface2);border-radius:10px;margin-bottom:0.75rem">
+            <div style="font-size:3rem;margin-bottom:0.5rem">👆</div>
+            <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.4rem">Fingerprint Enrollment</div>
+            <div id="epFingerStatus" style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted)">Click Scan to capture fingerprint from scanner</div>
+          </div>
+          <div id="epFingerSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+            <div style="font-size:1.3rem">✅</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem">Fingerprint Enrolled!</div>
+          </div>
+          <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;background:rgba(59,130,246,0.07);border-radius:8px;padding:0.6rem;margin-bottom:0.75rem;line-height:1.6">
+            💡 Requires scanner SDK (MFS100, SecuGen, etc.) on this machine. Wire <code style="color:var(--accent2)">triggerEnrollFingerScan()</code> to your SDK.
+          </div>
+          <div style="display:flex;gap:0.6rem;margin-bottom:0.5rem">
+            <button class="btn btn-secondary" style="flex:1;font-size:0.82rem" onclick="epFingerScan()">👆 Scan Finger</button>
+            <button class="btn btn-primary" style="flex:1;font-size:0.82rem" id="epFingerSaveBtn" onclick="epFingerSave()" disabled>✅ Enroll Finger</button>
+          </div>
+          <button id="epFingerDeleteBtn" class="btn btn-danger" style="width:100%;font-size:0.82rem;display:none" onclick="epFingerDelete()">🗑 Remove Fingerprint</button>
         </div>
 
-        <!-- Shot strip -->
-        <div style="margin-bottom:0.75rem">
-          <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.35rem">SHOTS CAPTURED <span id="epShotCount" style="color:var(--accent)">0</span>/3</div>
-          <div id="epShots" style="display:flex;gap:0.35rem;flex-wrap:wrap"></div>
+        <!-- PIN PANE -->
+        <div id="epPane_pin" style="display:none">
+          <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.75rem">Set or reset this employee's 6-digit punch PIN</div>
+          <div style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:0.75rem">
+            <div>
+              <label style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:0.3rem">New PIN (6 digits)</label>
+              <input type="password" id="epPinNew" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.6rem 0.85rem;font-size:1.1rem;letter-spacing:0.3em;text-align:center;outline:none">
+            </div>
+            <div>
+              <label style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:0.3rem">Confirm PIN</label>
+              <input type="password" id="epPinConf" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.6rem 0.85rem;font-size:1.1rem;letter-spacing:0.3em;text-align:center;outline:none">
+            </div>
+          </div>
+          <div id="epPinMsg" style="font-size:0.75rem;font-family:'DM Mono',monospace;min-height:1.2em;text-align:center;margin-bottom:0.6rem"></div>
+          <div id="epPinSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+            <div style="font-size:1.3rem">✅</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem">PIN Set!</div>
+          </div>
+          <div style="display:flex;gap:0.6rem">
+            <button class="btn btn-danger btn-sm" id="epPinClearBtn" style="display:none" onclick="epPinClear()">🗑 Clear PIN</button>
+            <button class="btn btn-primary" style="flex:1;font-size:0.82rem" onclick="epPinSave()">✅ Set PIN</button>
+          </div>
+          <div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:center">Hashed server-side · never stored in plain text</div>
         </div>
 
-        <!-- Success -->
-        <div id="epSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
-          <div style="font-size:1.3rem">✅</div>
-          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem" id="epSuccessMsg">Enrolled!</div>
-        </div>
-
-        <!-- Buttons -->
-        <div style="display:flex;gap:0.6rem;margin-bottom:0.5rem">
-          <button class="btn btn-secondary" style="flex:1;font-size:0.82rem" onclick="epCapture()">📸 Capture</button>
-          <button class="btn btn-primary" style="flex:1;font-size:0.82rem" id="epSaveBtn" onclick="epSave()" disabled>✅ Enroll</button>
-        </div>
-        <button id="epDeleteBtn" class="btn btn-danger" style="width:100%;font-size:0.82rem;display:none" onclick="epDelete()">🗑 Remove Enrollment</button>
-      </div>
-    </div>
-  </div>
-</div>
+      </div><!-- /enrollPanel -->
+    </div><!-- /right card -->
+  </div><!-- /grid -->
+</div><!-- /page-enrollment -->
 
 <!-- ══ ATTENDANCE PAGE ═════════════════════════════════════════════════════ -->
 <div class="page" id="page-attendance">
@@ -727,11 +728,7 @@ tr:hover td { background:rgba(255,255,255,0.02); }
           </tr>
         </thead>
         <tbody id="attTable">
-          <tr><td colspan="<th></th>
-          </tr>
-        </thead>
-        <tbody id="attTable">
-          <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Select a date to load records</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Select a date to load records</td></tr>
         </tbody>
       </table>
     </div>
@@ -855,26 +852,45 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 
     <!-- BIOMETRICS -->
     <div class="card" style="padding:1.1rem">
-      <div class="card-title" style="font-size:0.85rem;margin-bottom:0.85rem"><span class="dot blue"></span>Biometrics</div>
+      <div class="card-title" style="font-size:0.85rem;margin-bottom:0.85rem"><span class="dot blue"></span>Auth Methods &amp; Biometrics</div>
+      <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.6rem;padding:0.4rem 0.6rem;background:rgba(59,130,246,0.07);border-radius:6px">Enable the punch methods available to employees</div>
       <div style="display:flex;flex-direction:column;gap:0.35rem">
         <div class="stogrow">
-          <span class="slbl">Face Recognition</span>
+          <div>
+            <span class="slbl">📷 Face Recognition</span>
+            <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">ArcFace biometric punch</div>
+          </div>
           <button class="toggle on" id="t_face" onclick="this.classList.toggle('on')"></button>
         </div>
+        <div class="stogrow">
+          <div>
+            <span class="slbl">👆 Fingerprint</span>
+            <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">Scanner SDK required</div>
+          </div>
+          <button class="toggle" id="t_fingerprint" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="stogrow">
+          <div>
+            <span class="slbl">🔢 PIN-based Punch</span>
+            <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">6-digit employee PIN</div>
+          </div>
+          <button class="toggle" id="t_pin" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div style="height:1px;background:var(--border);margin:0.25rem 0"></div>
         <div class="stogrow">
           <span class="slbl">Liveness Detection</span>
           <button class="toggle on" id="t_liveness" onclick="this.classList.toggle('on')"></button>
         </div>
         <div class="stogrow">
           <span class="slbl">Test Mode (GPS bypass)</span>
-          <button class="toggle on" id="t_testmode" onclick="this.classList.toggle('on')"></button>
+          <button class="toggle" id="t_testmode" onclick="this.classList.toggle('on')"></button>
         </div>
         <div class="srow" style="margin-top:0.25rem">
-          <span class="slbl">Min Match Score (%)</span>
+          <span class="slbl">Min Face Score (%)</span>
           <input class="sinp" type="number" id="s_threshold" value="42" min="20" max="99" style="width:70px">
         </div>
       </div>
-      <button class="sbtn" onclick="saveSettings('biometrics')">💾 Save Biometrics</button>
+      <button class="sbtn" onclick="saveSettings('biometrics')">💾 Save Auth Settings</button>
     </div>
 
     <!-- SYSTEM HEALTH -->
@@ -906,7 +922,7 @@ tr:hover td { background:rgba(255,255,255,0.02); }
   <div style="margin-top:1rem;background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:0.85rem 1rem;font-size:0.78rem;color:var(--muted);font-family:'DM Mono',monospace">
     ✅ Settings are saved to Supabase and take effect on the <strong style="color:var(--accent)">next punch attempt</strong> — no restart needed. Geofence coordinates are enforced live on every punch.
   </div>
-</div>
+</div><!-- /page-pinsettings -->
 </div><!-- /container -->
 
 <!-- ══ ADD / EDIT EMPLOYEE MODAL ═══════════════════════════════════════════ -->
@@ -978,52 +994,12 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 <!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
 <div class="toast" id="toast"><span id="toastIcon">✅</span><div id="toastMsg"></div></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 const API_BASE = 'https://trustwork-attendx.hf.space';
 
-// ── AUTH CHECK — inline PIN overlay, no redirect ─────────────────────────
-let adminPin = localStorage.getItem('adminPin') || '1234';
-let pinBuf   = '';
-
-function adminPinPress(d) {
-  if (pinBuf.length >= 4) return;
-  pinBuf += d;
-  updateAdminDots();
-  if (pinBuf.length === 4) setTimeout(verifyAdminPin, 150);
-}
-function adminPinDel()   { pinBuf = pinBuf.slice(0,-1); updateAdminDots(); }
-function adminPinClear() { pinBuf = ''; updateAdminDots(); document.getElementById('overlayPinErr').textContent = ''; }
-
-function updateAdminDots() {
-  for (let i = 0; i < 4; i++) {
-    const d = document.getElementById('opd' + i);
-    if (d) d.className = 'pin-dot' + (i < pinBuf.length ? ' filled' : '');
-  }
-}
-
-function verifyAdminPin() {
-  const stored = localStorage.getItem('adminPin') || '1234';
-  if (pinBuf === stored) {
-    sessionStorage.setItem('adminAuth', 'true');
-    document.getElementById('adminPinOverlay').style.display = 'none';
-    init();
-  } else {
-    for (let i = 0; i < 4; i++) {
-      const d = document.getElementById('opd' + i);
-      if (d) d.className = 'pin-dot error';
-    }
-    document.getElementById('overlayPinErr').textContent = '✗ Wrong PIN. Try again.';
-    setTimeout(() => { adminPinClear(); document.getElementById('overlayPinErr').textContent = ''; }, 800);
-  }
-}
-
-// Show overlay or go straight to dashboard
+// ── AUTH CHECK ────────────────────────────────────────────────────────────
 if (sessionStorage.getItem('adminAuth') !== 'true') {
-  window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('adminPinOverlay').style.display = 'flex';
-  });
-} else {
-  window.addEventListener('DOMContentLoaded', init);
+  window.location.href = 'login.html';
 }
 const SUPABASE_URL = 'REPLACE_WITH_YOUR_SUPABASE_URL';
 const SUPABASE_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
@@ -1115,10 +1091,17 @@ async function saveSettings(section) {
   }
 
   if (section === 'biometrics') {
-    current.face_enabled     = document.getElementById('t_face').classList.contains('on');
-    current.liveness_enabled = document.getElementById('t_liveness').classList.contains('on');
-    current.test_mode        = document.getElementById('t_testmode').classList.contains('on');
-    current.face_threshold   = parseFloat(document.getElementById('s_threshold').value) / 100 || 0.42;
+    current.face_enabled        = document.getElementById('t_face').classList.contains('on');
+    current.fingerprint_enabled = document.getElementById('t_fingerprint').classList.contains('on');
+    current.pin_enabled         = document.getElementById('t_pin').classList.contains('on');
+    current.liveness_enabled    = document.getElementById('t_liveness').classList.contains('on');
+    current.test_mode           = document.getElementById('t_testmode').classList.contains('on');
+    current.face_threshold      = parseFloat(document.getElementById('s_threshold').value) / 100 || 0.42;
+    // Validate at least one method enabled
+    if (!current.face_enabled && !current.fingerprint_enabled && !current.pin_enabled) {
+      showToast('⚠️', 'At least one auth method must be enabled!', true);
+      return;
+    }
   }
 
   try {
@@ -1161,9 +1144,11 @@ async function loadSettings() {
     document.getElementById('t_weekend').classList.toggle('on', cfg.weekend_attendance === true);
 
     // Biometrics
-    document.getElementById('t_face').classList.toggle('on',     cfg.face_enabled     !== false);
-    document.getElementById('t_liveness').classList.toggle('on', cfg.liveness_enabled !== false);
-    document.getElementById('t_testmode').classList.toggle('on', cfg.test_mode        === true);
+    document.getElementById('t_face').classList.toggle('on',        cfg.face_enabled        !== false);
+    document.getElementById('t_fingerprint').classList.toggle('on', cfg.fingerprint_enabled === true);
+    document.getElementById('t_pin').classList.toggle('on',         cfg.pin_enabled         === true);
+    document.getElementById('t_liveness').classList.toggle('on',    cfg.liveness_enabled    !== false);
+    document.getElementById('t_testmode').classList.toggle('on',    cfg.test_mode           === true);
     if (cfg.face_threshold != null) document.getElementById('s_threshold').value = Math.round(cfg.face_threshold * 100);
 
     console.log('Settings loaded from DB:', cfg);
@@ -1341,6 +1326,9 @@ let editingId    = null;
 let deletingId   = null;
 const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
+// auth status cache: { [empId]: {face_enrolled, finger_enrolled, pin_set} }
+let authStatusCache = {};
+
 async function loadEmployees() {
   try {
     const [empRes, faceRes, todayRes] = await Promise.all([
@@ -1353,10 +1341,19 @@ async function loadEmployees() {
     allEnrolled  = faceRes.ok ? await faceRes.json() : [];
     const today  = todayRes.ok ? await todayRes.json() : {present:0, logs:[]};
 
-    document.getElementById('statTotal').textContent   = allEmployees.length;
-    document.getElementById('statPresent').textContent = today.present || 0;
+    document.getElementById('statTotal').textContent    = allEmployees.length;
+    document.getElementById('statPresent').textContent  = today.present || 0;
     document.getElementById('statEnrolled').textContent = allEnrolled.length;
-    document.getElementById('empCount').textContent    = allEmployees.length;
+    document.getElementById('empCount').textContent     = allEmployees.length;
+
+    // Fetch auth status for all employees in parallel (best effort)
+    authStatusCache = {};
+    await Promise.all(allEmployees.map(async e => {
+      try {
+        const r = await fetch(`${API_BASE}/employees/${e.id}/auth-status`);
+        if (r.ok) authStatusCache[e.id] = await r.json();
+      } catch(_) {}
+    }));
 
     renderEmployees(allEmployees);
   } catch(e) {
@@ -1368,7 +1365,7 @@ async function loadEmployees() {
 function renderEmployees(list) {
   const tbody = document.getElementById('empTable');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No employees found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No employees found</td></tr>';
     return;
   }
   const enrolledIds = new Set(allEnrolled.map(e => e.employee_id));
@@ -1376,28 +1373,42 @@ function renderEmployees(list) {
     const initials = e.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
     const c = colors[i % colors.length];
     const enrolled = enrolledIds.has(e.id);
+    // Auth badges — dim if not enrolled
+    const auth = authStatusCache[e.id] || {};
+    const badge = (icon, active, label) =>
+      `<span title="${label}" style="font-size:0.9rem;opacity:${active?'1':'0.2'}">${icon}</span>`;
+    const authBadges =
+      badge('📷', auth.face_enrolled,   auth.face_enrolled   ? 'Face enrolled'   : 'Face not enrolled') +
+      badge('👆', auth.finger_enrolled, auth.finger_enrolled ? 'Finger enrolled' : 'Finger not enrolled') +
+      badge('🔢', auth.pin_set,         auth.pin_set         ? 'PIN set'         : 'PIN not set');
+    const authText = [
+      auth.face_enrolled   ? 'Face'   : null,
+      auth.finger_enrolled ? 'Finger' : null,
+      auth.pin_set         ? 'PIN'    : null,
+    ].filter(Boolean).join(' · ') || 'None enrolled';
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:0.6rem">
           <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40">${initials}</div>
           <div>
             <div class="emp-name-link" data-id="${e.id}" data-name="${e.name}" data-code="${e.emp_code}" data-dept="${e.department||''}" data-enrolled="${enrolled}" data-color="${c}" style="font-weight:600;cursor:pointer;color:var(--text)" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${e.name}</div>
-            <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">${e.role || 'employee'}</div>
+            <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace">${e.role||'employee'} · ${e.department||'—'}</div>
           </div>
         </div>
       </td>
-      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${e.emp_code || '—'}</td>
-      <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${e.department || '—'}</span></td>
-      <td style="font-size:0.8rem">${e.email || '—'}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:0.78rem">${e.phone || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${e.emp_code||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.78rem">${e.phone||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:0.78rem">${e.shift_start||'09:00'} – ${e.shift_end||'18:00'}</td>
-      <td><span class="status-pill ${enrolled?'pill-active':'pill-inactive'} emp-enroll-link" data-id="${e.id}" data-name="${e.name}" data-code="${e.emp_code}" data-dept="${e.department||''}" data-enrolled="${enrolled}" data-color="${c}" style="cursor:pointer" title="Click to manage enrollment">${enrolled?'✓ Enrolled':'✗ Enroll'}</span></td>
-      <td><div style='display:flex;flex-direction:column;gap:3px'><span class="status-pill ${e.is_active!==false?'pill-active':'pill-inactive'}">${e.is_active!==false?'Active':'Inactive'}</span>${e.allow_wfh?'<span style="font-size:0.65rem;color:var(--accent2);font-family:DM Mono,monospace">🏠 WFH On</span>':''}</div></td>
       <td>
-        <div style="display:flex;gap:0.4rem">
-          <button class="btn btn-secondary btn-sm edit-btn" data-id="${e.id}" title="Edit">✏️</button>
+        <div style="display:flex;gap:0.25rem;align-items:center">${authBadges}</div>
+        <div style="font-size:0.62rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">${authText}</div>
+      </td>
+      <td><div style="display:flex;flex-direction:column;gap:3px"><span class="status-pill ${e.is_active!==false?'pill-active':'pill-inactive'}">${e.is_active!==false?'Active':'Inactive'}</span>${e.allow_wfh?'<span style="font-size:0.65rem;color:var(--accent2);font-family:DM Mono,monospace">🏠 WFH</span>':''}</div></td>
+      <td>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm edit-btn" data-id="${e.id}" title="Edit employee">✏️</button>
           <button class="btn btn-secondary btn-sm wfh-btn" data-id="${e.id}" data-name="${e.name}" title="WFH / Geofence Settings" style="color:var(--accent2);border-color:rgba(59,130,246,0.3)">🏠</button>
-          <button class="btn btn-danger btn-sm del-btn" data-id="${e.id}" data-name="${e.name}" title="Delete">🗑</button>
+          <button class="btn btn-danger btn-sm del-btn" data-id="${e.id}" data-name="${e.name}" title="Delete employee">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -1997,6 +2008,226 @@ async function addEmployee() {
   btn.disabled = false; btn.textContent = '💾 Add Employee';
 }
 
+// ── ENROLLMENT PAGE + MODAL SHARED HELPERS ───────────────────────────────
+
+// Tab switch for the Enrollment PAGE right panel
+let epCurrentTab = 'face';
+function epSwitchTab(tab) {
+  epCurrentTab = tab;
+  ['face','finger','pin'].forEach(t => {
+    const btn  = document.getElementById('epTab_' + t);
+    const pane = document.getElementById('epPane_' + t);
+    if (!btn || !pane) return;
+    const active = t === tab;
+    btn.style.background = active ? 'var(--surface)' : 'transparent';
+    btn.style.color      = active ? 'var(--text)'    : 'var(--muted)';
+    pane.style.display   = active ? 'block'          : 'none';
+  });
+  if (tab === 'face') { startEpCamera(); }
+  else { stopEpCamera(); }
+}
+
+// Tab switch for the Enrollment MODAL (name-click popup)
+let emCurrentTab = 'face';
+async function emSwitchTab(tab) {
+  emCurrentTab = tab;
+  ['face','finger','pin'].forEach(t => {
+    const btn  = document.getElementById('emTab_' + t);
+    const pane = document.getElementById('emPane_' + t);
+    if (!btn || !pane) return;
+    const active = t === tab;
+    btn.style.background = active ? 'var(--surface)' : 'transparent';
+    btn.style.color      = active ? 'var(--text)'    : 'var(--muted)';
+    pane.style.display   = active ? 'block'          : 'none';
+  });
+  if (tab === 'face') { await startEnrollCamera(); }
+  else { stopEnrollCamera(); }
+}
+
+// ── Fingerprint stubs (wire to your scanner SDK) ──────────────────────────
+let epFingerTemplate = null;
+let emFingerTemplate = null;
+
+async function triggerEnrollFingerScan() {
+  // TODO: Replace with real SDK call e.g. MFS100.enroll()
+  return new Promise(resolve => {
+    setTimeout(() => resolve('ENROLL_TEMPLATE_FROM_SDK_' + Date.now()), 1500);
+  });
+}
+
+// PAGE panel finger functions
+async function epFingerScan() {
+  document.getElementById('epFingerStatus').textContent = 'Scanning… keep finger steady';
+  document.getElementById('epFingerSaveBtn').disabled = true;
+  try {
+    epFingerTemplate = await triggerEnrollFingerScan();
+    document.getElementById('epFingerStatus').textContent = '✓ Fingerprint captured — click Enroll';
+    document.getElementById('epFingerSaveBtn').disabled = false;
+  } catch(e) {
+    document.getElementById('epFingerStatus').textContent = '✗ Scan failed: ' + e.message;
+  }
+}
+async function epFingerSave() {
+  if (!epFingerTemplate || !epCurrentId) return;
+  const btn = document.getElementById('epFingerSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Enrolling…';
+  try {
+    const res  = await fetch(API_BASE + '/finger/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: epCurrentId, template: epFingerTemplate})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('epFingerSuccess').style.display = 'block';
+      document.getElementById('epFingerDeleteBtn').style.display = 'block';
+      showToast('✅', document.getElementById('epName').textContent + ' fingerprint enrolled!');
+      try {
+        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        if (ar.ok) { const auth = await ar.json(); epAuthCache[epCurrentId] = auth; }
+      } catch(_) {}
+      await loadEnrollmentList();
+    } else {
+      showToast('❌', data?.detail?.message || 'Enrollment failed', true);
+      btn.disabled = false; btn.textContent = '✅ Enroll Finger';
+    }
+  } catch(e) { showToast('❌', e.message, true); btn.disabled = false; btn.textContent = '✅ Enroll Finger'; }
+}
+async function epFingerDelete() {
+  if (!epCurrentId || !confirm('Remove fingerprint for ' + document.getElementById('epName').textContent + '?')) return;
+  try {
+    const res = await fetch(API_BASE + '/finger/delete/' + epCurrentId, {method:'DELETE'});
+    if (res.ok) {
+      document.getElementById('epFingerSuccess').style.display = 'none';
+      document.getElementById('epFingerDeleteBtn').style.display = 'none';
+      document.getElementById('epFingerStatus').textContent = 'Click Scan to capture fingerprint';
+      epFingerTemplate = null;
+      showToast('✅','Fingerprint removed');
+      await loadEnrollmentList();
+    }
+  } catch(e) { showToast('❌', e.message, true); }
+}
+
+// PAGE panel PIN functions
+async function epPinSave() {
+  const pin  = document.getElementById('epPinNew').value.trim();
+  const conf = document.getElementById('epPinConf').value.trim();
+  const msg  = document.getElementById('epPinMsg');
+  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) { msg.textContent = '✗ Must be 6 digits'; msg.style.color='var(--danger)'; return; }
+  if (pin !== conf) { msg.textContent = '✗ PINs do not match'; msg.style.color='var(--danger)'; return; }
+  try {
+    const res  = await fetch(API_BASE + '/employees/set-pin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: epCurrentId, pin})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('epPinSuccess').style.display = 'block';
+      document.getElementById('epPinClearBtn').style.display = 'inline-flex';
+      document.getElementById('epPinNew').value = '';
+      document.getElementById('epPinConf').value = '';
+      msg.textContent = '';
+      showToast('✅', document.getElementById('epName').textContent + ' PIN set!');
+      try {
+        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        if (ar.ok) { const auth = await ar.json(); epAuthCache[epCurrentId] = auth; }
+      } catch(_) {}
+      loadEnrollmentList();
+    } else { msg.textContent = '✗ ' + (data?.detail?.message || 'Failed'); msg.style.color='var(--danger)'; }
+  } catch(e) { msg.textContent = '✗ Network error'; msg.style.color='var(--danger)'; }
+}
+async function epPinClear() {
+  if (!epCurrentId || !confirm('Clear PIN?')) return;
+  try {
+    const res = await fetch(API_BASE + '/employees/' + epCurrentId + '/pin', {method:'DELETE'});
+    if (res.ok) {
+      document.getElementById('epPinSuccess').style.display = 'none';
+      document.getElementById('epPinClearBtn').style.display = 'none';
+      showToast('✅','PIN cleared');
+    }
+  } catch(e) { showToast('❌', e.message, true); }
+}
+
+// MODAL finger functions
+async function emFingerScan() {
+  document.getElementById('emFingerStatus').textContent = 'Scanning… keep finger steady';
+  document.getElementById('emFingerSaveBtn').disabled = true;
+  try {
+    emFingerTemplate = await triggerEnrollFingerScan();
+    document.getElementById('emFingerStatus').textContent = '✓ Fingerprint captured — click Enroll';
+    document.getElementById('emFingerSaveBtn').disabled = false;
+  } catch(e) {
+    document.getElementById('emFingerStatus').textContent = '✗ Scan failed: ' + e.message;
+  }
+}
+async function emFingerSave() {
+  if (!emFingerTemplate || !enrollEmpId) return;
+  const btn = document.getElementById('emFingerSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Enrolling…';
+  try {
+    const res  = await fetch(API_BASE + '/finger/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: enrollEmpId, template: emFingerTemplate})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('emFingerSuccess').style.display = 'block';
+      document.getElementById('emFingerDeleteBtn').style.display = 'block';
+      showToast('✅', enrollEmpName + ' fingerprint enrolled!');
+    } else {
+      showToast('❌', data?.detail?.message || 'Failed', true);
+      btn.disabled = false; btn.textContent = '✅ Enroll Finger';
+    }
+  } catch(e) { showToast('❌', e.message, true); btn.disabled = false; btn.textContent = '✅ Enroll Finger'; }
+}
+async function emFingerDelete() {
+  if (!enrollEmpId || !confirm('Remove fingerprint for ' + enrollEmpName + '?')) return;
+  try {
+    const res = await fetch(API_BASE + '/finger/delete/' + enrollEmpId, {method:'DELETE'});
+    if (res.ok) {
+      document.getElementById('emFingerSuccess').style.display = 'none';
+      document.getElementById('emFingerDeleteBtn').style.display = 'none';
+      document.getElementById('emFingerStatus').textContent = 'Place finger on scanner, then click Scan';
+      emFingerTemplate = null;
+      showToast('✅','Fingerprint removed');
+    }
+  } catch(e) { showToast('❌', e.message, true); }
+}
+
+// MODAL PIN functions
+async function emPinSave() {
+  const pin  = document.getElementById('emPinNew').value.trim();
+  const conf = document.getElementById('emPinConf').value.trim();
+  const msg  = document.getElementById('emPinMsg');
+  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) { msg.textContent = '✗ Must be 6 digits'; msg.style.color='var(--danger)'; return; }
+  if (pin !== conf) { msg.textContent = '✗ PINs do not match'; msg.style.color='var(--danger)'; return; }
+  try {
+    const res  = await fetch(API_BASE + '/employees/set-pin', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({employee_id: enrollEmpId, pin})
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('emPinSuccess').style.display = 'block';
+      document.getElementById('emPinClearBtn').style.display = 'inline-flex';
+      document.getElementById('emPinNew').value = '';
+      document.getElementById('emPinConf').value = '';
+      msg.textContent = '';
+      showToast('✅', enrollEmpName + ' PIN set!');
+    } else { msg.textContent = '✗ ' + (data?.detail?.message || 'Failed'); msg.style.color='var(--danger)'; }
+  } catch(e) { msg.textContent = '✗ Network error'; msg.style.color='var(--danger)'; }
+}
+async function emPinClear() {
+  if (!enrollEmpId || !confirm('Clear PIN for ' + enrollEmpName + '?')) return;
+  try {
+    const res = await fetch(API_BASE + '/employees/' + enrollEmpId + '/pin', {method:'DELETE'});
+    if (res.ok) {
+      document.getElementById('emPinSuccess').style.display = 'none';
+      document.getElementById('emPinClearBtn').style.display = 'none';
+      showToast('✅','PIN cleared');
+    }
+  } catch(e) { showToast('❌', e.message, true); }
+}
+
 // ── FACE ENROLLMENT PAGE ───────────────────────────────────────────────────
 let epStream     = null;
 let epShots      = [];
@@ -2004,6 +2235,9 @@ let epCurrentId  = null;
 let epIsEnrolled = false;
 let epAllEmps    = [];
 let epFilter     = 'all';
+
+// auth status per employee for enrollment page: { empId: {face_enrolled, finger_enrolled, pin_set} }
+let epAuthCache = {};
 
 async function loadEnrollmentList() {
   try {
@@ -2015,14 +2249,27 @@ async function loadEnrollmentList() {
     const enrolled = faceRes.ok ? await faceRes.json() : [];
     const enrolledIds = new Set(enrolled.map(e => e.employee_id));
 
-    // Update progress
+    // Fetch auth-status per employee in parallel (best effort)
+    epAuthCache = {};
+    await Promise.all(epAllEmps.map(async e => {
+      try {
+        const r = await fetch(API_BASE + '/employees/' + e.id + '/auth-status');
+        if (r.ok) epAuthCache[e.id] = await r.json();
+      } catch(_) {}
+    }));
+
+    // Mark enrolled: any method enrolled = done
+    epAllEmps = epAllEmps.map(e => {
+      const a = epAuthCache[e.id] || {};
+      const anyEnrolled = a.face_enrolled || a.finger_enrolled || a.pin_set;
+      return {...e, enrolled: enrolledIds.has(e.id) || !!anyEnrolled};
+    });
+
+    // Progress: count employees with at least one method
     const total = epAllEmps.length;
-    const done  = epAllEmps.filter(e => enrolledIds.has(e.id)).length;
+    const done  = epAllEmps.filter(e => e.enrolled).length;
     document.getElementById('enrollProgress').textContent = `${done} / ${total} enrolled`;
     document.getElementById('enrollProgressBar').style.width = total ? (done/total*100)+'%' : '0%';
-
-    // Mark enrolled status on employees
-    epAllEmps = epAllEmps.map(e => ({...e, enrolled: enrolledIds.has(e.id)}));
 
     renderEnrollList();
   } catch(e) {
@@ -2047,7 +2294,7 @@ function renderEnrollList() {
   if (epFilter === 'done')    emps = emps.filter(e => e.enrolled);
 
   if (!emps.length) {
-    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${epFilter==='done'?'No enrolled employees yet':epFilter==='pending'?'All employees enrolled! ✅':'No employees found'}</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${epFilter==='done'?'No employees with any method enrolled yet':epFilter==='pending'?'All employees have at least one method enrolled ✅':'No employees found'}</div>`;
     return;
   }
 
@@ -2055,6 +2302,12 @@ function renderEnrollList() {
     const c = colors[i % colors.length];
     const ini = e.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
     const isActive = epCurrentId === e.id;
+    const a = epAuthCache[e.id] || {};
+    const authIcons = [
+      `<span title="${a.face_enrolled   ? 'Face enrolled'   : 'Face not enrolled'}"   style="font-size:1rem;opacity:${a.face_enrolled   ? '1' : '0.2'}">📷</span>`,
+      `<span title="${a.finger_enrolled ? 'Finger enrolled' : 'Finger not enrolled'}" style="font-size:1rem;opacity:${a.finger_enrolled ? '1' : '0.2'}">👆</span>`,
+      `<span title="${a.pin_set         ? 'PIN set'         : 'PIN not set'}"         style="font-size:1rem;opacity:${a.pin_set         ? '1' : '0.2'}">🔢</span>`,
+    ].join('');
     return `<div class="enroll-list-item" data-id="${e.id}" data-name="${e.name}" data-code="${e.emp_code}" data-dept="${e.department||''}" data-enrolled="${e.enrolled}" data-color="${c}"
       style="display:flex;align-items:center;gap:0.65rem;padding:0.65rem 0.75rem;background:${isActive?'rgba(0,229,160,0.08)':'var(--surface2)'};border:1px solid ${isActive?'rgba(0,229,160,0.3)':'transparent'};border-radius:9px;cursor:pointer;transition:all 0.2s">
       <div style="width:32px;height:32px;border-radius:50%;background:${c}20;color:${c};border:1px solid ${c}40;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">${ini}</div>
@@ -2062,14 +2315,12 @@ function renderEnrollList() {
         <div style="font-size:0.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.name}</div>
         <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${e.emp_code} · ${e.department||'—'}</div>
       </div>
-      <span style="font-size:0.65rem;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:10px;flex-shrink:0;background:${e.enrolled?'rgba(0,229,160,0.12)':'rgba(245,158,11,0.12)'};color:${e.enrolled?'var(--accent)':'var(--accent3)'}">
-        ${e.enrolled ? '✓ Done' : '⏳ Pending'}
-      </span>
+      <div style="display:flex;gap:0.1rem;flex-shrink:0">${authIcons}</div>
     </div>`;
   }).join('');
 }
 
-function selectEpEmployee(id, name, code, dept, isEnrolled, color) {
+async function selectEpEmployee(id, name, code, dept, isEnrolled, color) {
   epCurrentId  = id;
   epIsEnrolled = isEnrolled;
   epShots      = [];
@@ -2084,25 +2335,63 @@ function selectEpEmployee(id, name, code, dept, isEnrolled, color) {
   document.getElementById('epName').textContent     = name;
   document.getElementById('epCode').textContent     = code + (dept ? ' · ' + dept : '');
 
+  // epStatus will be updated with real auth icons once fetch completes below
   const st = document.getElementById('epStatus');
-  st.textContent   = isEnrolled ? '✓ Enrolled' : '⏳ Enroll Pending';
-  st.style.cssText = `font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px;background:${isEnrolled?'rgba(0,229,160,0.12)':'rgba(245,158,11,0.12)'};color:${isEnrolled?'var(--accent)':'var(--accent3)'}`;
+  st.innerHTML = '<span style="font-size:1rem;opacity:0.3">📷</span><span style="font-size:1rem;opacity:0.3">👆</span><span style="font-size:1rem;opacity:0.3">🔢</span>';
+  st.style.cssText = 'display:flex;gap:0.15rem;align-items:center';
 
   document.getElementById('epDeleteBtn').style.display = isEnrolled ? 'block' : 'none';
   document.getElementById('epSuccess').style.display   = 'none';
   document.getElementById('epSaveBtn').disabled        = true;
+  document.getElementById('epFingerSuccess').style.display   = 'none';
+  document.getElementById('epFingerDeleteBtn').style.display = 'none';
+  document.getElementById('epPinSuccess').style.display      = 'none';
+  document.getElementById('epPinClearBtn').style.display     = 'none';
+  document.getElementById('epPinNew').value  = '';
+  document.getElementById('epPinConf').value = '';
+  document.getElementById('epPinMsg').textContent = '';
+  epFingerTemplate = null;
   renderEpShots();
+
+  // Load current auth status — update icons + reflect in tabs
+  try {
+    const r = await fetch(API_BASE + '/employees/' + id + '/auth-status');
+    if (r.ok) {
+      const auth = await r.json();
+      // Update status icons in panel header
+      const st = document.getElementById('epStatus');
+      st.innerHTML = [
+        `<span title="${auth.face_enrolled   ? 'Face enrolled'   : 'Face not enrolled'}"   style="font-size:1rem;opacity:${auth.face_enrolled   ? '1' : '0.25'}">📷</span>`,
+        `<span title="${auth.finger_enrolled ? 'Finger enrolled' : 'Finger not enrolled'}" style="font-size:1rem;opacity:${auth.finger_enrolled ? '1' : '0.25'}">👆</span>`,
+        `<span title="${auth.pin_set         ? 'PIN set'         : 'PIN not set'}"         style="font-size:1rem;opacity:${auth.pin_set         ? '1' : '0.25'}">🔢</span>`,
+      ].join('');
+      // Also update the list item for this employee
+      epAuthCache[id] = auth;
+      renderEnrollList();
+      // Reflect in tabs
+      if (auth.finger_enrolled) {
+        document.getElementById('epFingerSuccess').style.display = 'block';
+        document.getElementById('epFingerDeleteBtn').style.display = 'block';
+        document.getElementById('epFingerStatus').textContent = '✓ Already enrolled — scan to re-enroll';
+      }
+      if (auth.pin_set) {
+        document.getElementById('epPinSuccess').style.display = 'block';
+        document.getElementById('epPinClearBtn').style.display = 'inline-flex';
+      }
+    }
+  } catch(e) {}
 
   // Re-render list to highlight selected
   renderEnrollList();
 
-  // Start camera
-  startEpCamera();
+  // Reset to face tab and start camera
+  epSwitchTab('face');
 }
 
 async function startEpCamera() {
   try {
     stopEpCamera();
+    stopEnrollCamera(); // release modal camera if it was open
     epStream = await navigator.mediaDevices.getUserMedia({
       video:{width:{ideal:640},height:{ideal:480},facingMode:'user'}
     });
@@ -2178,17 +2467,24 @@ async function epSave() {
     if (res.ok && data.success) {
       epIsEnrolled = true;
       document.getElementById('epSuccess').style.display = 'block';
-      document.getElementById('epSuccessMsg').textContent = document.getElementById('epName').textContent + ' enrolled successfully!';
-      document.getElementById('epStatus').textContent     = '✓ Enrolled';
-      document.getElementById('epStatus').style.color     = 'var(--accent)';
-      document.getElementById('epStatus').style.background = 'rgba(0,229,160,0.12)';
+      document.getElementById('epSuccessMsg').textContent = document.getElementById('epName').textContent + ' face enrolled!';
       document.getElementById('epDeleteBtn').style.display = 'block';
       showToast('✅', document.getElementById('epName').textContent + ' face enrolled!');
-      // Refresh list
+      // Refresh auth icons
+      try {
+        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        if (ar.ok) {
+          const auth = await ar.json();
+          epAuthCache[epCurrentId] = auth;
+          const st = document.getElementById('epStatus');
+          st.innerHTML = [
+            `<span title="${auth.face_enrolled?'Face enrolled':'Face not enrolled'}" style="font-size:1rem;opacity:${auth.face_enrolled?'1':'0.25'}">📷</span>`,
+            `<span title="${auth.finger_enrolled?'Finger enrolled':'Finger not enrolled'}" style="font-size:1rem;opacity:${auth.finger_enrolled?'1':'0.25'}">👆</span>`,
+            `<span title="${auth.pin_set?'PIN set':'PIN not set'}" style="font-size:1rem;opacity:${auth.pin_set?'1':'0.25'}">🔢</span>`,
+          ].join('');
+        }
+      } catch(_) {}
       await loadEnrollmentList();
-      // Re-select to update
-      const emp = epAllEmps.find(e => e.id === epCurrentId);
-      if (emp) renderEnrollList();
     } else {
       const msg = data?.detail?.message || 'Enrollment failed';
       showToast('❌', msg, true);
@@ -2260,7 +2556,7 @@ let enrollEmpId   = null;
 let enrollEmpName = '';
 const enrollColors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
 
-function openEnrollModal(id, name, code, dept, isEnrolled, color) {
+async function openEnrollModal(id, name, code, dept, isEnrolled, color) {
   enrollEmpId   = id;
   enrollEmpName = name;
   enrollShots   = [];
@@ -2276,26 +2572,54 @@ function openEnrollModal(id, name, code, dept, isEnrolled, color) {
   badge.textContent   = isEnrolled ? '✓ Enrolled' : '✗ Not Enrolled';
   badge.style.cssText = `margin-left:auto;font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px;background:${isEnrolled?'rgba(0,229,160,0.12)':'rgba(239,68,68,0.12)'};color:${isEnrolled?'var(--accent)':'var(--danger)'}`;
 
-  // Show delete button if enrolled
-  document.getElementById('enrollDeleteBtn').style.display = isEnrolled ? 'block' : 'none';
-
   // Reset UI
-  document.getElementById('enrollResult').style.display = 'none';
-  document.getElementById('enrollSaveBtn').disabled = true;
+  document.getElementById('enrollResult').style.display     = 'none';
+  document.getElementById('enrollSaveBtn').disabled         = true;
+  document.getElementById('enrollDeleteBtn').style.display  = isEnrolled ? 'block' : 'none';
+  document.getElementById('emFingerSuccess').style.display  = 'none';
+  document.getElementById('emFingerDeleteBtn').style.display= 'none';
+  document.getElementById('emPinSuccess').style.display     = 'none';
+  document.getElementById('emPinClearBtn').style.display    = 'none';
+  document.getElementById('emPinNew').value  = '';
+  document.getElementById('emPinConf').value = '';
+  document.getElementById('emPinMsg').textContent = '';
+  emFingerTemplate = null;
   renderEnrollShots();
 
   document.getElementById('enrollModal').classList.add('show');
-  startEnrollCamera();
+
+  // Show face tab immediately so modal is always usable
+  emSwitchTab('face');
+
+  // Load current auth status for finger/PIN (non-blocking)
+  try {
+    const r = await fetch(API_BASE + '/employees/' + enrollEmpId + '/auth-status');
+    if (r.ok) {
+      const auth = await r.json();
+      if (auth.finger_enrolled) {
+        document.getElementById('emFingerSuccess').style.display  = 'block';
+        document.getElementById('emFingerDeleteBtn').style.display= 'block';
+        document.getElementById('emFingerStatus').textContent = '✓ Already enrolled — scan to re-enroll';
+      }
+      if (auth.pin_set) {
+        document.getElementById('emPinSuccess').style.display   = 'block';
+        document.getElementById('emPinClearBtn').style.display  = 'inline-flex';
+      }
+    }
+  } catch(e) { /* API unavailable — tabs still work */ }
 }
 
 function closeEnrollModal() {
   document.getElementById('enrollModal').classList.remove('show');
   stopEnrollCamera();
+  emCurrentTab = 'face';
+  emFingerTemplate = null;
 }
 
 async function startEnrollCamera() {
   try {
     stopEnrollCamera();
+    stopEpCamera(); // release ep camera if enrollment page had it open
     enrollStream = await navigator.mediaDevices.getUserMedia({
       video:{width:{ideal:640},height:{ideal:480},facingMode:'user'}
     });
@@ -2412,6 +2736,100 @@ async function deleteEnrollment() {
   } catch(e) { showToast('❌','Error: ' + e.message, true); }
 }
 
+// ── SET PIN MODAL ─────────────────────────────────────────────────────────
+let setPinEmpId = null;
+
+async function openSetPinModal(id, name) {
+  setPinEmpId = id;
+  const initials = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('setPinAvatar').textContent  = initials;
+  document.getElementById('setPinEmpName').textContent = name;
+  document.getElementById('pin_new').value  = '';
+  document.getElementById('pin_conf').value = '';
+  document.getElementById('pinFormMsg').textContent = '';
+  document.getElementById('pinFormMsg').style.color = 'var(--muted)';
+
+  // Check current status
+  const statusEl = document.getElementById('setPinStatus');
+  statusEl.textContent = '…';
+  statusEl.style.cssText = 'margin-left:auto;font-size:0.68rem;font-family:DM Mono,monospace;padding:3px 8px;border-radius:10px;background:rgba(90,106,126,0.15);color:var(--muted)';
+  document.getElementById('setPinModal').classList.add('show');
+
+  try {
+    const res  = await fetch(`${API_BASE}/employees/${id}/auth-status`);
+    if (res.ok) {
+      const d = await res.json();
+      if (d.pin_set) {
+        statusEl.textContent = d.pin_locked ? '🔒 Locked' : '✓ PIN Set';
+        statusEl.style.background = d.pin_locked ? 'rgba(239,68,68,0.12)' : 'rgba(0,229,160,0.12)';
+        statusEl.style.color      = d.pin_locked ? 'var(--danger)' : 'var(--accent)';
+        document.getElementById('clearPinBtn').style.display = 'inline-flex';
+      } else {
+        statusEl.textContent      = '✗ No PIN';
+        statusEl.style.background = 'rgba(239,68,68,0.12)';
+        statusEl.style.color      = 'var(--danger)';
+        document.getElementById('clearPinBtn').style.display = 'none';
+      }
+    }
+  } catch(e) { statusEl.textContent = '?'; }
+}
+
+function closeSetPinModal() {
+  document.getElementById('setPinModal').classList.remove('show');
+  setPinEmpId = null;
+}
+
+async function saveEmpPin() {
+  const pin  = document.getElementById('pin_new').value.trim();
+  const conf = document.getElementById('pin_conf').value.trim();
+  const msg  = document.getElementById('pinFormMsg');
+
+  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    msg.textContent = '✗ PIN must be exactly 6 digits'; msg.style.color = 'var(--danger)'; return;
+  }
+  if (pin !== conf) {
+    msg.textContent = '✗ PINs do not match'; msg.style.color = 'var(--danger)'; return;
+  }
+  const btn = document.getElementById('savePinBtn');
+  btn.disabled = true; btn.textContent = '⏳ Setting PIN…';
+
+  try {
+    const res  = await fetch(`${API_BASE}/employees/set-pin`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ employee_id: setPinEmpId, pin })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('✅', 'PIN set successfully for ' + document.getElementById('setPinEmpName').textContent);
+      closeSetPinModal();
+    } else {
+      msg.textContent = '✗ ' + (data.detail?.message || data.message || 'Failed');
+      msg.style.color = 'var(--danger)';
+    }
+  } catch(e) {
+    msg.textContent = '✗ Network error'; msg.style.color = 'var(--danger)';
+  }
+  btn.disabled = false; btn.textContent = '✅ Set PIN';
+}
+
+async function clearEmpPin() {
+  if (!setPinEmpId) return;
+  if (!confirm('Clear PIN for this employee? They will not be able to use PIN punch until a new PIN is set.')) return;
+  try {
+    const res  = await fetch(`${API_BASE}/employees/${setPinEmpId}/pin`, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showToast('✅', 'PIN cleared');
+      closeSetPinModal();
+    } else {
+      showToast('❌', data.message || 'Failed to clear PIN', true);
+    }
+  } catch(e) {
+    showToast('❌', 'Network error', true);
+  }
+}
+
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function showToast(icon, msg, isErr=false) {
   const t = document.getElementById('toast');
@@ -2428,7 +2846,7 @@ function showToast(icon, msg, isErr=false) {
 <div class="modal-overlay" id="enrollModal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header">
-      <div class="modal-title">📷 Face Enrollment</div>
+      <div class="modal-title" id="enrollModalTitle">🔐 Enrollment</div>
       <button class="modal-close" onclick="closeEnrollModal()">✕</button>
     </div>
 
@@ -2442,48 +2860,93 @@ function showToast(icon, msg, isErr=false) {
       <div id="enrollBadge" style="margin-left:auto;font-size:0.7rem;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:10px"></div>
     </div>
 
-    <!-- Webcam -->
-    <div id="enrollCamBox" style="position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
-      <video id="enrollVideo" autoplay muted playsinline style="width:100%;max-height:220px;object-fit:cover;transform:scaleX(-1);display:block"></video>
-      <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
-        <div style="width:110px;height:130px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
-        <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+    <!-- Method tabs -->
+    <div style="display:flex;gap:0.4rem;margin-bottom:1rem;background:var(--surface2);border-radius:9px;padding:4px">
+      <button id="emTab_face"   onclick="emSwitchTab('face')"   style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:var(--surface);color:var(--text)">📷 Face</button>
+      <button id="emTab_finger" onclick="emSwitchTab('finger')" style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted)">👆 Finger</button>
+      <button id="emTab_pin"    onclick="emSwitchTab('pin')"    style="flex:1;padding:0.45rem;border-radius:7px;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--muted)">🔢 PIN</button>
+    </div>
+
+    <!-- FACE PANE -->
+    <div id="emPane_face">
+      <div id="enrollCamBox" style="position:relative;border-radius:12px;overflow:hidden;border:2px solid var(--accent);background:var(--surface2);margin-bottom:0.75rem;display:none">
+        <video id="enrollVideo" autoplay muted playsinline style="width:100%;max-height:220px;object-fit:cover;transform:scaleX(-1);display:block"></video>
+        <div style="position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center">
+          <div style="width:110px;height:130px;border-radius:50%;border:2px dashed rgba(0,229,160,0.5)"></div>
+          <div style="position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent)"></div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.4rem 0.75rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent)">● LIVE · Look straight at camera</div>
       </div>
-      <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:0.4rem 0.75rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--accent)">● LIVE · Look straight at camera</div>
-    </div>
-
-    <!-- Camera error -->
-    <div id="enrollCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:1rem;text-align:center;margin-bottom:0.75rem">
-      <div style="font-size:1.2rem;margin-bottom:0.35rem">📷</div>
-      <div id="enrollCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.6rem;line-height:1.5"></div>
-      <button onclick="startEnrollCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
-    </div>
-
-    <!-- Shot strip -->
-    <div style="margin-bottom:0.75rem">
-      <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.4rem">CAPTURED SHOTS (take 3 for best accuracy)</div>
-      <div id="enrollShots" style="display:flex;gap:0.4rem;flex-wrap:wrap">
-        <div style="width:56px;height:56px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.1rem;cursor:pointer" onclick="enrollCapture()" title="Capture">+</div>
+      <div id="enrollCamErr" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:1rem;text-align:center;margin-bottom:0.75rem">
+        <div style="font-size:1.2rem;margin-bottom:0.35rem">📷</div>
+        <div id="enrollCamErrMsg" style="font-size:0.78rem;color:var(--danger);margin-bottom:0.6rem;line-height:1.5"></div>
+        <button onclick="startEnrollCamera()" style="background:var(--accent);border:none;border-radius:7px;padding:0.45rem 1rem;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer">↺ Retry Camera</button>
       </div>
+      <div style="margin-bottom:0.75rem">
+        <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.4rem">CAPTURED SHOTS (take 3 for best accuracy)</div>
+        <div id="enrollShots" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <div style="width:56px;height:56px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.1rem;cursor:pointer" onclick="enrollCapture()" title="Capture">+</div>
+        </div>
+      </div>
+      <div id="enrollResult" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;margin-bottom:0.75rem">
+        <div style="font-size:1.5rem">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-top:0.25rem" id="enrollResultMsg">Face Enrolled!</div>
+      </div>
+      <div style="background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.1);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
+        💡 <strong style="color:var(--accent)">Tips:</strong> Good lighting · Face front · No glasses · Front + slight left + slight right
+      </div>
+      <div style="display:flex;gap:0.75rem">
+        <button class="btn btn-secondary" style="flex:1" onclick="enrollCapture()">📸 Capture Shot</button>
+        <button class="btn btn-primary" style="flex:1" id="enrollSaveBtn" onclick="saveEnrollment()" disabled>✅ Enroll Face</button>
+      </div>
+      <button class="btn btn-danger" style="width:100%;margin-top:0.5rem" id="enrollDeleteBtn" onclick="deleteEnrollment()">🗑 Remove Face</button>
     </div>
 
-    <!-- Result -->
-    <div id="enrollResult" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:10px;margin-bottom:0.75rem">
-      <div style="font-size:1.5rem">✅</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:700;margin-top:0.25rem" id="enrollResultMsg">Enrolled!</div>
+    <!-- FINGER PANE -->
+    <div id="emPane_finger" style="display:none">
+      <div style="text-align:center;padding:1.5rem;background:var(--surface2);border-radius:10px;margin-bottom:0.75rem">
+        <div style="font-size:3rem;margin-bottom:0.5rem">👆</div>
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:0.4rem">Fingerprint Enrollment</div>
+        <div id="emFingerStatus" style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--muted)">Place finger on scanner, then click Scan</div>
+      </div>
+      <div id="emFingerSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+        <div style="font-size:1.3rem">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem">Fingerprint Enrolled!</div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;background:rgba(59,130,246,0.07);border-radius:8px;padding:0.6rem;margin-bottom:0.75rem;line-height:1.6">
+        💡 Requires scanner SDK (MFS100, SecuGen, etc.) on this machine.
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-bottom:0.5rem">
+        <button class="btn btn-secondary" style="flex:1" onclick="emFingerScan()">👆 Scan Finger</button>
+        <button class="btn btn-primary" style="flex:1" id="emFingerSaveBtn" onclick="emFingerSave()" disabled>✅ Enroll Finger</button>
+      </div>
+      <button id="emFingerDeleteBtn" class="btn btn-danger" style="width:100%;display:none" onclick="emFingerDelete()">🗑 Remove Fingerprint</button>
     </div>
 
-    <!-- Tips -->
-    <div style="background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.1);border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.72rem;color:var(--muted);line-height:1.6">
-      💡 <strong style="color:var(--accent)">Tips:</strong> Good lighting · Face front · No glasses · Take front + slight left + slight right
+    <!-- PIN PANE -->
+    <div id="emPane_pin" style="display:none">
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:0.75rem">Set or reset this employee's 6-digit punch PIN</div>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;margin-bottom:0.75rem">
+        <div>
+          <label style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:0.3rem">New PIN (6 digits)</label>
+          <input type="password" id="emPinNew" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.6rem 0.85rem;font-size:1.1rem;letter-spacing:0.3em;text-align:center;outline:none">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:0.3rem">Confirm PIN</label>
+          <input type="password" id="emPinConf" maxlength="6" placeholder="••••••" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:0.6rem 0.85rem;font-size:1.1rem;letter-spacing:0.3em;text-align:center;outline:none">
+        </div>
+      </div>
+      <div id="emPinMsg" style="font-size:0.75rem;font-family:'DM Mono',monospace;min-height:1.2em;text-align:center;margin-bottom:0.6rem"></div>
+      <div id="emPinSuccess" style="display:none;text-align:center;padding:0.75rem;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:9px;margin-bottom:0.75rem">
+        <div style="font-size:1.3rem">✅</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-top:0.2rem">PIN Set!</div>
+      </div>
+      <div style="display:flex;gap:0.6rem">
+        <button class="btn btn-danger btn-sm" id="emPinClearBtn" style="display:none" onclick="emPinClear()">🗑 Clear PIN</button>
+        <button class="btn btn-primary" style="flex:1" onclick="emPinSave()">✅ Set PIN</button>
+      </div>
+      <div style="margin-top:0.5rem;font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:center">Hashed server-side · never stored in plain text</div>
     </div>
-
-    <!-- Buttons -->
-    <div style="display:flex;gap:0.75rem">
-      <button class="btn btn-secondary" style="flex:1" onclick="enrollCapture()">📸 Capture Shot</button>
-      <button class="btn btn-primary" style="flex:1" id="enrollSaveBtn" onclick="saveEnrollment()" disabled>✅ Save Enrollment</button>
-    </div>
-    <button class="btn btn-danger" style="width:100%;margin-top:0.5rem" id="enrollDeleteBtn" onclick="deleteEnrollment()" style="display:none">🗑 Remove Enrollment</button>
   </div>
 </div>
 
