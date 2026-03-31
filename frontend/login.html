@@ -146,6 +146,13 @@ footer {
 @media(min-width:601px) {
   .login-box { width:380px; margin:0 auto; }
 }
+
+/* PIN OVERLAY */
+.pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.2s; }
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px rgba(0,229,160,0.4); }
+.pin-dot.error { border-color: var(--danger); background: rgba(239,68,68,0.2); }
+.pin-key { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 0; font-family: 'Syne',sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.pin-key:hover { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -198,9 +205,9 @@ footer {
 
       <!-- ADMIN LINK -->
       <div style="text-align:center;margin-top:1.25rem">
-        <a href="admin.html" style="display:inline-flex;align-items:center;gap:0.4rem;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);text-decoration:none;padding:0.4rem 0.85rem;border-radius:20px;border:1px solid var(--border);transition:all 0.2s" onmouseover="this.style.borderColor='rgba(0,229,160,0.3)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        <button onclick="showAdminPin()" style="background:transparent;display:inline-flex;align-items:center;gap:0.4rem;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);text-decoration:none;padding:0.4rem 0.85rem;border-radius:20px;border:1px solid var(--border);transition:all 0.2s;cursor:pointer" onmouseover="this.style.borderColor='rgba(0,229,160,0.3)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
           🔐 Admin Access
-        </a>
+        </button>
       </div>
 
     </div>
@@ -208,6 +215,37 @@ footer {
 </main>
 
 <footer>© TrustWork Solutions · AttendX v1.0 · Confidential — for authorised use only</footer>
+
+<!-- ADMIN PIN OVERLAY -->
+<div id="adminPinOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,13,18,0.97);backdrop-filter:blur(20px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:320px;text-align:center;box-shadow:0 0 60px rgba(0,229,160,0.1)">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem">🛡️</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:0.25rem">Admin Access</div>
+    <div style="color:var(--muted);font-size:0.78rem;font-family:'DM Mono',monospace;margin-bottom:1.5rem">Enter your 4-digit PIN to continue</div>
+    <div style="display:flex;justify-content:center;gap:0.75rem;margin-bottom:1.5rem">
+      <div id="opd0" class="pin-dot"></div>
+      <div id="opd1" class="pin-dot"></div>
+      <div id="opd2" class="pin-dot"></div>
+      <div id="opd3" class="pin-dot"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:0.75rem">
+      <button class="pin-key" onclick="adminPinPress('1')">1</button>
+      <button class="pin-key" onclick="adminPinPress('2')">2</button>
+      <button class="pin-key" onclick="adminPinPress('3')">3</button>
+      <button class="pin-key" onclick="adminPinPress('4')">4</button>
+      <button class="pin-key" onclick="adminPinPress('5')">5</button>
+      <button class="pin-key" onclick="adminPinPress('6')">6</button>
+      <button class="pin-key" onclick="adminPinPress('7')">7</button>
+      <button class="pin-key" onclick="adminPinPress('8')">8</button>
+      <button class="pin-key" onclick="adminPinPress('9')">9</button>
+      <button class="pin-key" style="color:var(--danger)" onclick="adminPinDel()">⌫</button>
+      <button class="pin-key" style="grid-column:2" onclick="adminPinPress('0')">0</button>
+      <button class="pin-key" style="color:var(--danger)" onclick="adminPinClear()">✕</button>
+    </div>
+    <div id="overlayPinErr" style="font-size:0.75rem;color:var(--danger);font-family:'DM Mono',monospace;min-height:1.1rem;margin-bottom:0.75rem"></div>
+    <button onclick="document.getElementById('adminPinOverlay').style.display='none'" style="background:none;border:none;font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;cursor:pointer;opacity:0.7">← Back to Employee Login</button>
+  </div>
+</div>
 
 <div id="loader"><div class="spinner"></div><div class="load-txt" id="loadTxt">Please wait…</div></div>
 
@@ -260,6 +298,44 @@ async function empLogin() {
   }
 }
 
+// ── ADMIN PIN LOGIC ────────────────────────────────────────────────────────
+let pinBuf = '';
+
+function showAdminPin() {
+  document.getElementById('adminPinOverlay').style.display = 'flex';
+  adminPinClear();
+}
+
+function adminPinPress(d) {
+  if (pinBuf.length >= 4) return;
+  pinBuf += d;
+  updateAdminDots();
+  if (pinBuf.length === 4) setTimeout(verifyAdminPin, 150);
+}
+function adminPinDel() { pinBuf = pinBuf.slice(0,-1); updateAdminDots(); }
+function adminPinClear() { pinBuf = ''; updateAdminDots(); document.getElementById('overlayPinErr').textContent = ''; }
+
+function updateAdminDots() {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('opd' + i);
+    if (d) d.className = 'pin-dot' + (i < pinBuf.length ? ' filled' : '');
+  }
+}
+
+function verifyAdminPin() {
+  const stored = localStorage.getItem('adminPin') || '1234';
+  if (pinBuf === stored) {
+    sessionStorage.setItem('adminAuth', 'true');
+    window.location.href = 'admin.html';
+  } else {
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById('opd' + i);
+      if (d) d.className = 'pin-dot error';
+    }
+    document.getElementById('overlayPinErr').textContent = '✗ Wrong PIN. Try again.';
+    setTimeout(() => { adminPinClear(); document.getElementById('overlayPinErr').textContent = ''; }, 800);
+  }
+}
 
 </script>
 </body>
