@@ -1544,7 +1544,15 @@ async function confirmDelete() {
 
 
 // ── MANUAL PUNCH ──────────────────────────────────────────────────────────
-function openManualPunchModal() {
+async function openManualPunchModal() {
+  // Ensure employees are loaded before opening (fixes race condition when
+  // coming directly to Attendance tab without visiting Employees tab first)
+  if (!allEmployees || !allEmployees.length) {
+    try {
+      const r = await fetch(API_BASE + '/employees');
+      if (r.ok) allEmployees = await r.json();
+    } catch(_) {}
+  }
   const sel = document.getElementById('mp_employee');
   sel.innerHTML = '<option value="">Select employee…</option>';
   (allEmployees || []).forEach(e => {
