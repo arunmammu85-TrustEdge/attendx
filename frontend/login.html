@@ -50,18 +50,18 @@ header {
 .h-contact { display:flex; flex-direction:column; gap:1px; }
 .h-contact a { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--accent2); text-decoration:none; }
 .h-contact a:hover { color:var(--accent); }
-.clock { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--muted); display:flex; align-items:center; gap:0; }
+.clock { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--muted); display:flex; flex-direction:column; align-items:flex-end; line-height:1.3; }
 
 /* MAIN */
 main {
   flex:1; position:relative; z-index:1;
-  display:flex; align-items:center; justify-content:center; padding:2rem;
+  display:flex; align-items:center; justify-content:center; padding:2rem 1rem;
 }
-.wrap { display:flex; gap:4rem; align-items:center; max-width:960px; width:100%; }
+.wrap { width:100%; max-width:420px; margin:0 auto; }
 
 
 /* LOGIN BOX */
-.login-box { width:360px; flex-shrink:0; }
+.login-box { width:100%; }
 
 /* CARD */
 .card {
@@ -128,12 +128,24 @@ footer {
   border-top:1px solid var(--border);
 }
 
-@media(max-width:750px) {
-  .wrap { flex-direction:column; gap:1.5rem; }
-  .brand-title { font-size:2rem; }
-  .login-box { width:100%; max-width:380px; }
-  .brand { text-align:center; }
-    }
+/* Mobile first */
+@media(max-width:600px) {
+  header { padding:0 1rem; height:auto; min-height:56px; flex-wrap:wrap; gap:0.5rem; padding-top:0.5rem; padding-bottom:0.5rem; }
+  .h-left { gap:0.5rem; }
+  .h-logo { height:28px; width:54px; }
+  .h-brand { font-size:0.9rem; }
+  .h-div { display:none; }
+  .h-contact { display:none; }
+  .clock { font-size:0.65rem; }
+  main { padding:1rem; align-items:flex-start; padding-top:1.5rem; }
+  .wrap { padding:0; }
+  .login-box { width:100%; }
+  .card { padding:1.25rem; }
+  footer { font-size:0.62rem; padding:0.65rem; }
+}
+@media(min-width:601px) {
+  .login-box { width:380px; margin:0 auto; }
+}
 </style>
 </head>
 <body>
@@ -146,7 +158,7 @@ footer {
     <div class="h-brand">Attend<span>X</span></div>
     <div class="h-div"></div>
     <div class="h-contact">
-      <a href="mailto:attendance@trustwork.co.in" style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--accent2);text-decoration:none">✉ attendance@trustwork.co.in</a>
+      <a href="mailto:attendance@trustwork.co.in">✉ attendance@trustwork.co.in</a>
       <div style="display:flex;align-items:center;gap:0.4rem">
         <a href="tel:+919353010107">☎ +91 93530 10107</a>
         <a href="https://wa.me/919353010107" target="_blank" style="display:inline-flex">
@@ -184,6 +196,13 @@ footer {
         <button class="btn btn-emp" id="empBtn" onclick="empLogin()">Continue as Employee</button>
       </div>
 
+      <!-- ADMIN LINK -->
+      <div style="text-align:center;margin-top:1.25rem">
+        <a href="admin.html" style="display:inline-flex;align-items:center;gap:0.4rem;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);text-decoration:none;padding:0.4rem 0.85rem;border-radius:20px;border:1px solid var(--border);transition:all 0.2s" onmouseover="this.style.borderColor='rgba(0,229,160,0.3)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+          🔐 Admin Access
+        </a>
+      </div>
+
     </div>
   </div>
 </main>
@@ -192,7 +211,7 @@ footer {
 
 <div id="loader"><div class="spinner"></div><div class="load-txt" id="loadTxt">Please wait…</div></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ── CLOCK ──────────────────────────────────────────────────────────────────
 function updateClock() {
   const now  = new Date();
@@ -200,9 +219,8 @@ function updateClock() {
   const day  = now.toLocaleDateString('en-IN',{weekday:'long',timeZone:'Asia/Kolkata'});
   const date = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
   document.getElementById('clk').innerHTML =
-    '<span style="color:var(--text)">' + time + ' IST</span>' +
-    '<span style="color:var(--border);margin:0 0.4rem">|</span>' +
-    '<span>' + day + ', ' + date + '</span>';
+    '<div style="color:var(--text);font-weight:500">' + time + ' IST</div>' +
+    '<div style="color:var(--muted);font-size:0.65rem;margin-top:1px">' + day + ' · ' + date + '</div>';
 }
 setInterval(updateClock, 1000);
 updateClock();
