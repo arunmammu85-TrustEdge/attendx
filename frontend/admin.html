@@ -1209,7 +1209,10 @@ function showPage(id, btn) {
   if (id==='employees')  loadEmployees();
   if (id==='addemp')     initAddEmp();
   if (id==='enrollment') { loadEnrollmentList(); }
-  if (id==='attendance') initAttendance();
+  if (id==='attendance') {
+    if (!allEmployees || !allEmployees.length) loadEmployees().catch(()=>{});
+    initAttendance();
+  }
   if (id==='reports')    initReports();
   if (id==='pinsettings') { checkSystem(); loadSettings(); }
 }
@@ -1759,12 +1762,14 @@ function renderAttendance() {
     const c = colors[i%colors.length];
     const initials = (l.employee_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
     const st = l.status || 'present';
+    const empInfo = (typeof allEmployees !== 'undefined' ? allEmployees : []).find(e => e.id === l.employee_id) || {};
+    const empCode = l.emp_code || empInfo.emp_code || '';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:0.6rem">
         <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
         <div>
           <div style="font-weight:500">${l.employee_name||'Unknown'}</div>
-          <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${l.emp_code||''}</div>
+          <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${empCode}</div>
         </div>
       </div></td>
       <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${l.department||'—'}</span></td>
