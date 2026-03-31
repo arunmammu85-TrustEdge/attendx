@@ -489,7 +489,8 @@ function selectMethod(method) {
   pinBox.classList.toggle('show', method === 'pin');
 
   if (method === 'face') {
-    if (!camStream) startCamera();
+    // Don't start camera if attendance is already complete for today
+    if (!camStream && !attendanceComplete) startCamera();
   } else {
     // Stop camera when not using face to free up resource
     if (method !== 'face' && camStream) {
@@ -508,6 +509,7 @@ function selectMethod(method) {
 
 // ── CAMERA ─────────────────────────────────────────────────────────────
 let camStream = null;
+let attendanceComplete = false;
 async function startCamera() {
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -873,6 +875,10 @@ async function loadTodayStatus() {
       document.getElementById('btnIn').style.display   = 'none';
       document.getElementById('btnOut').style.display  = 'none';
       document.getElementById('btnDone').style.display = 'block';
+      // Attendance complete — stop camera, no need for it
+      attendanceComplete = true;
+      if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+      document.getElementById('camBox').classList.remove('show');
     } else if (mine.punch_in_time) {
       document.getElementById('btnIn').style.display  = 'none';
       document.getElementById('btnOut').style.display = 'block';
@@ -959,9 +965,12 @@ function toast(icon, msg, isErr=false) {
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-loadSysSettings();   // fetches /settings → builds method picker → starts camera if face enabled
-checkGPS();
-loadTodayStatus();
+// Load today status FIRST so attendanceComplete is set before camera starts
+(async () => {
+  await loadTodayStatus();
+  loadSysSettings();  // starts camera only if attendance not complete
+  checkGPS();
+})();
 </script>
 </body>
 </html>
