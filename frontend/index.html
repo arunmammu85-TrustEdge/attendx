@@ -172,13 +172,40 @@ canvas { display:none; }
 .fp-icon { font-size:3rem; margin-bottom:0.5rem; }
 .fp-status { font-family:'DM Mono',monospace; font-size:0.78rem; color:var(--muted); margin-top:0.4rem; }
 
+/* BOTTOM NAV for mobile */
+.bottom-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0; z-index:200;
+  background:rgba(10,13,18,0.97); backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:0.5rem 1rem 0.75rem;
+  gap:0.5rem;
+}
+.bottom-nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:0.2rem;
+  background:transparent; border:none; color:var(--muted);
+  font-family:'DM Mono',monospace; font-size:0.62rem; cursor:pointer;
+  padding:0.4rem; border-radius:8px; transition:all 0.2s;
+}
+.bottom-nav-btn .bn-icon { font-size:1.3rem; }
+.bottom-nav-btn.active { color:var(--accent); background:rgba(0,229,160,0.08); }
+
 @media(max-width:600px) {
   nav { padding:0 1rem; }
-  .container { padding:1rem; }
+  .nav-tabs { display:none; }
+  .logout-btn { font-size:0.65rem; padding:4px 8px; }
+  .nav-emp { display:none; }
+  .nav-div { display:none; }
+  .container { padding:1rem; padding-bottom:5rem; }
   .time-display { font-size:2.2rem; }
   .month-stats { grid-template-columns:1fr 1fr; }
-  .nav-tabs { display:none; }
   .method-btns { flex-wrap:wrap; }
+  .bottom-nav { display:flex; }
+  table { font-size:0.75rem; }
+  th, td { padding:0.6rem 0.5rem; }
+  .month-stats { gap:0.5rem; }
+  .mstat { padding:0.65rem 0.5rem; }
+  .mstat-val { font-size:1.2rem; }
 }
 </style>
 </head>
@@ -199,6 +226,19 @@ canvas { display:none; }
     <button class="logout-btn" onclick="doLogout()">⏻ Logout</button>
   </div>
 </nav>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-btn active" id="bnPunch" onclick="showPage('punch',this,'bn')">
+    <span class="bn-icon">✋</span>Punch
+  </button>
+  <button class="bottom-nav-btn" id="bnHistory" onclick="showPage('history',this,'bn')">
+    <span class="bn-icon">📋</span>Records
+  </button>
+  <button class="bottom-nav-btn" onclick="doLogout()">
+    <span class="bn-icon">⏻</span>Logout
+  </button>
+</div>
 
 <div class="container">
 
@@ -412,11 +452,16 @@ function updateClock() {
 setInterval(updateClock, 1000); updateClock();
 
 // ── NAV ────────────────────────────────────────────────────────────────────
-function showPage(id, btn) {
+function showPage(id, btn, source) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
+  // Sync top nav tabs
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (source !== 'bn') btn.classList.add('active');
+  // Sync bottom nav active state
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  const bnMap = { punch:'bnPunch', history:'bnHistory' };
+  if (bnMap[id]) document.getElementById(bnMap[id]).classList.add('active');
   if (id === 'history') { initHistoryMonths(); loadHistory(); }
 }
 
