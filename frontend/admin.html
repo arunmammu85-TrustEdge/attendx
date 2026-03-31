@@ -1600,8 +1600,7 @@ async function saveManualPunch() {
       const empName = selEl.options[selEl.selectedIndex].text;
       showToast('✅', 'Manual punch-' + type + ' recorded for ' + empName);
       closeManualPunchModal();
-      const attDate = document.getElementById('attDate').value;
-      if (attDate === date) loadAttendance();
+      loadAttendance();
     } else {
       let msg = 'Failed';
       if (Array.isArray(data.detail)) {
@@ -1778,7 +1777,7 @@ function renderAttendance() {
     const c = colors[i%colors.length];
     const initials = (l.employee_name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
     const st = l.status || 'present';
-    const empInfo = (typeof allEmployees !== 'undefined' ? allEmployees : []).find(e => e.id === l.employee_id) || {};
+    const empInfo = (typeof allEmployees !== 'undefined' ? allEmployees : []).find(e => String(e.id) === String(l.employee_id)) || {};
     const empCode = l.emp_code || empInfo.emp_code || '';
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:0.6rem">
