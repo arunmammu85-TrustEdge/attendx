@@ -1565,7 +1565,7 @@ function closeManualPunchModal() {
 }
 
 async function saveManualPunch() {
-  const empId  = document.getElementById('mp_employee').value;
+  const empId  = parseInt(document.getElementById('mp_employee').value, 10);
   const type   = document.getElementById('mp_type').value;
   const date   = document.getElementById('mp_date').value;
   const time   = document.getElementById('mp_time').value;
@@ -1593,10 +1593,10 @@ async function saveManualPunch() {
       })
     });
     const data = await res.json();
-    if (res.ok && data.success) {
+    if (res.ok) {
       const selEl   = document.getElementById('mp_employee');
       const empName = selEl.options[selEl.selectedIndex].text;
-      showToast('✅', 'Manual punch-' + type + ' recorded at ' + data.time + ' for ' + empName);
+      showToast('✅', 'Manual punch-' + type + ' recorded for ' + empName);
       closeManualPunchModal();
       const attDate = document.getElementById('attDate').value;
       if (attDate === date) loadAttendance();
