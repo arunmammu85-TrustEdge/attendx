@@ -1590,6 +1590,8 @@ async function saveManualPunch() {
         punch_time:  punchTimeIST,
         reason:      reason,
         admin_note:  note || null,
+        is_manual:   true,
+        source:      'admin',
       })
     });
     const data = await res.json();
