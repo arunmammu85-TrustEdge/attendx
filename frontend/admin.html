@@ -549,6 +549,9 @@ tr:hover td { background:rgba(255,255,255,0.02); }
     </div>
     <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
       <input class="search-input" id="enrollSearch" placeholder="🔍 Search name or code…" oninput="renderEnrollList()" style="width:220px">
+      <select id="enrollDeptFilter" onchange="renderEnrollList()" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
+        <option value="">All Departments</option>
+      </select>
       <button class="btn btn-secondary btn-sm" onclick="loadEnrollmentList()">↺ Refresh</button>
     </div>
   </div>
@@ -697,6 +700,7 @@ tr:hover td { background:rgba(255,255,255,0.02); }
       <div class="page-sub" id="attDateSub">// Today's records</div>
     </div>
     <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+      <input class="search-input" id="attSearch" placeholder="🔍 Search name or code…" oninput="renderAttendance()" style="width:220px">
       <input type="date" id="attDate" onchange="loadAttendance()" style="padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
       <select id="attDeptFilter" onchange="renderAttendance()" style="width:160px;padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none">
         <option value="">All Departments</option>
@@ -1723,10 +1727,15 @@ async function loadAttendance() {
 
 function renderAttendance() {
   const dept   = document.getElementById('attDeptFilter').value;
-  const filtered = dept ? attData.filter(l => l.department === dept) : attData;
+  const q      = (document.getElementById('attSearch')?.value || '').trim().toLowerCase();
+  let filtered = dept ? attData.filter(l => l.department === dept) : attData;
+  if (q) filtered = filtered.filter(l =>
+    (l.employee_name || '').toLowerCase().includes(q) ||
+    (l.emp_code || '').toLowerCase().includes(q)
+  );
   const tbody  = document.getElementById('attTable');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No records for this date</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">' + (q ? 'No match for &quot;' + q + '&quot;' : 'No records for this date') + '</td></tr>';
     return;
   }
   const fmt = ts => {
@@ -1741,7 +1750,10 @@ function renderAttendance() {
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:0.6rem">
         <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
-        <span style="font-weight:500">${l.employee_name||'Unknown'}</span>
+        <div>
+          <div style="font-weight:500">${l.employee_name||'Unknown'}</div>
+          <div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${l.emp_code||''}</div>
+        </div>
       </div></td>
       <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${l.department||'—'}</span></td>
       <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${fmt(l.punch_in_time)}</td>
@@ -2274,6 +2286,13 @@ async function loadEnrollmentList() {
     document.getElementById('enrollProgress').textContent = `${done} / ${total} enrolled`;
     document.getElementById('enrollProgressBar').style.width = total ? (done/total*100)+'%' : '0%';
 
+    // Populate dept dropdown
+    const deptSel = document.getElementById('enrollDeptFilter');
+    const prevDept = deptSel.value;
+    const depts = [...new Set(epAllEmps.map(e => e.department).filter(Boolean))].sort();
+    deptSel.innerHTML = '<option value="">All Departments</option>' +
+      depts.map(d => `<option value="${d}"${d===prevDept?' selected':''}>${d}</option>`).join('');
+
     renderEnrollList();
   } catch(e) {
     showToast('❌','Failed to load employees', true);
@@ -2293,12 +2312,14 @@ function renderEnrollList() {
   const list   = document.getElementById('enrollEmpList');
   const colors = ['#00e5a0','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
   const q      = (document.getElementById('enrollSearch')?.value || '').trim().toLowerCase();
+  const dept   = document.getElementById('enrollDeptFilter')?.value || '';
   let   emps   = epAllEmps;
   if (epFilter === 'pending') emps = emps.filter(e => !e.enrolled);
   if (epFilter === 'done')    emps = emps.filter(e =>  e.enrolled);
-  if (q) emps = emps.filter(e =>
+  if (q)    emps = emps.filter(e =>
     e.name.toLowerCase().includes(q) || (e.emp_code || '').toLowerCase().includes(q)
   );
+  if (dept) emps = emps.filter(e => e.department === dept);
 
   if (!emps.length) {
     list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem">${q?'No match for &quot;'+q+'&quot;':epFilter==='done'?'No employees with any method enrolled yet':epFilter==='pending'?'All employees have at least one method enrolled ✅':'No employees found'}</div>`;
