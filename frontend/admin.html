@@ -1601,7 +1601,15 @@ async function saveManualPunch() {
       const attDate = document.getElementById('attDate').value;
       if (attDate === date) loadAttendance();
     } else {
-      const msg = (data.detail && data.detail.message) ? data.detail.message : (data.detail || 'Failed');
+      let msg = 'Failed';
+      if (Array.isArray(data.detail)) {
+        msg = data.detail.map(e => (e.loc ? e.loc.join('.') + ': ' : '') + e.msg).join(' | ');
+      } else if (data.detail && data.detail.message) {
+        msg = data.detail.message;
+      } else if (data.detail) {
+        msg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      }
+      console.error('Manual punch 422 detail:', JSON.stringify(data));
       showToast('❌', msg, true);
     }
   } catch(e) {
