@@ -1561,9 +1561,12 @@ async function openManualPunchModal() {
     o.textContent = e.name + ' (' + (e.emp_code || '') + ')';
     sel.appendChild(o);
   });
-  const ist = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Kolkata'}));
-  document.getElementById('mp_date').value = ist.toISOString().split('T')[0];
-  document.getElementById('mp_time').value = ist.toTimeString().substring(0, 5);
+  // Correctly get IST date and time without UTC conversion bug
+  const nowIST = new Date().toLocaleString('en-CA', {timeZone:'Asia/Kolkata', hour12:false});
+  // en-CA gives "YYYY-MM-DD, HH:MM:SS" format
+  const [istDate, istTimePart] = nowIST.split(', ');
+  document.getElementById('mp_date').value = istDate;
+  document.getElementById('mp_time').value = istTimePart.substring(0, 5);
   document.getElementById('mp_note').value = '';
   document.getElementById('manualPunchModal').classList.add('show');
 }
