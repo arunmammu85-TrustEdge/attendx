@@ -751,13 +751,56 @@ tr:hover td { background:rgba(255,255,255,0.02); }
   <div class="page-header">
     <div>
       <div class="page-title">Reports</div>
-      <div class="page-sub">// Monthly attendance analytics</div>
+      <div class="page-sub">// Attendance analytics &amp; insights</div>
     </div>
-    <div style="display:flex;gap:0.75rem;align-items:center">
-      <select id="reportMonth" style="padding:0.6rem 0.85rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none"></select>
-      <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
       <button class="btn btn-export" onclick="exportMonthlyCSV()">⬇ Export CSV</button>
     </div>
+  </div>
+
+  <!-- FILTERS CARD -->
+  <div class="card" style="margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;align-items:end">
+      <div class="form-row">
+        <label>Month</label>
+        <select id="reportMonth"></select>
+      </div>
+      <div class="form-row">
+        <label>Department</label>
+        <select id="reportDept" onchange="renderReport()">
+          <option value="">All Departments</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Attendance %</label>
+        <select id="reportAttFilter" onchange="renderReport()">
+          <option value="">All</option>
+          <option value="high">≥ 90% (Excellent)</option>
+          <option value="mid">75–89% (Good)</option>
+          <option value="low">&lt; 75% (At Risk)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Sort By</label>
+        <select id="reportSort" onchange="renderReport()">
+          <option value="name">Name</option>
+          <option value="att_desc">Attendance % ↓</option>
+          <option value="att_asc">Attendance % ↑</option>
+          <option value="hours_desc">Hours ↓</option>
+          <option value="absent_desc">Most Absent ↓</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Search Employee</label>
+        <input type="text" id="reportSearch" placeholder="Name or code…" oninput="renderReport()">
+      </div>
+      <div class="form-row" style="justify-content:flex-end">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" onclick="loadReport()" style="width:100%">🔍 Generate</button>
+      </div>
+    </div>
+    <!-- SUMMARY PILLS -->
+    <div id="reportSummary" style="display:none;margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap"></div>
   </div>
 
   <div class="card">
@@ -766,20 +809,21 @@ tr:hover td { background:rgba(255,255,255,0.02); }
         <thead>
           <tr>
             <th>Employee</th>
-            <th>Department</th>
+            <th>Dept</th>
             <th>Present</th>
             <th>Late</th>
             <th>Absent</th>
-            <th>Total Hours</th>
-            <th>Avg Hours/Day</th>
+            <th>Total Hrs</th>
+            <th>Avg Hrs/Day</th>
             <th>Attendance %</th>
           </tr>
         </thead>
         <tbody id="reportTable">
-          <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Select a month and click Generate</td></tr>
+          <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">Set filters and click Generate</td></tr>
         </tbody>
       </table>
     </div>
+    <div id="reportCount" style="margin-top:0.75rem;font-size:0.72rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:right"></div>
   </div>
 </div>
 
@@ -1875,74 +1919,177 @@ function exportCSV() {
 
 // ── MONTHLY REPORT ────────────────────────────────────────────────────────
 let reportData = [];
+let reportWorkDays = 26;
 
 function initReports() {
+  // Month picker — last 12 months
   const sel = document.getElementById('reportMonth');
-  sel.innerHTML = '';
-  const now = new Date();
-  for (let i=0; i<12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const val = d.toISOString().substring(0,7);
-    const lbl = d.toLocaleDateString('en-IN',{year:'numeric',month:'long'});
-    const opt = document.createElement('option');
-    opt.value = val; opt.textContent = lbl;
-    sel.appendChild(opt);
+  if (sel.options.length === 0) {
+    const now = new Date();
+    for (let i=0; i<12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const opt = document.createElement('option');
+      opt.value = d.toISOString().substring(0,7);
+      opt.textContent = d.toLocaleDateString('en-IN',{year:'numeric',month:'long'});
+      sel.appendChild(opt);
+    }
   }
+  // Populate dept filter from allEmployees
+  const deptSel = document.getElementById('reportDept');
+  const depts = [...new Set((allEmployees||[]).map(e => e.department).filter(Boolean))].sort();
+  deptSel.innerHTML = '<option value="">All Departments</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
 }
 
 async function loadReport() {
   const month = document.getElementById('reportMonth').value;
   const tbody = document.getElementById('reportTable');
   tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Generating report…</td></tr>';
+  document.getElementById('reportCount').textContent = '';
+  document.getElementById('reportSummary').style.display = 'none';
   try {
-    const res  = await fetch(`${API_BASE}/attendance/monthly?month=${month}`);
+    const res = await fetch(`${API_BASE}/attendance/monthly?month=${month}`);
     reportData = res.ok ? await res.json() : [];
     if (!reportData.length) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No data for this month</td></tr>';
       return;
     }
-    const workDays = 26;
-    tbody.innerHTML = reportData.map((r,i) => {
-      const pct = Math.round(((r.present_days||0)+(r.late_days||0)) / workDays * 100);
-      const c   = colors[i%colors.length];
-      const initials = (r.name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-      return `<tr>
-        <td><div style="display:flex;align-items:center;gap:0.6rem">
-          <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
-          <span style="font-weight:500">${r.name}</span>
-        </div></td>
-        <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${r.department||'—'}</span></td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${r.present_days||0}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent3)">${r.late_days||0}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--danger)">${r.absent_days||0}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.total_hours||0}h</td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.avg_hours||0}h</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:0.5rem">
-            <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:60px">
-              <div style="height:100%;width:${pct}%;background:${pct>=90?'var(--accent)':pct>=75?'var(--accent3)':'var(--danger)'};border-radius:3px"></div>
-            </div>
-            <span style="font-family:'DM Mono',monospace;font-size:0.78rem;color:${pct>=90?'var(--accent)':pct>=75?'var(--accent3)':'var(--danger)'}">${pct}%</span>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+    // Calculate work days in selected month
+    const [yr, mo] = month.split('-').map(Number);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    let workDays = 0;
+    for (let d=1; d<=daysInMonth; d++) {
+      const day = new Date(yr, mo-1, d).getDay();
+      if (day !== 0 && day !== 6) workDays++;
+    }
+    reportWorkDays = workDays;
+    renderReport();
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--danger);font-family:DM Mono,monospace">⚠ ${e.message}</td></tr>`;
   }
 }
 
+function renderReport() {
+  if (!reportData.length) return;
+  const dept      = document.getElementById('reportDept').value;
+  const attFilter = document.getElementById('reportAttFilter').value;
+  const sort      = document.getElementById('reportSort').value;
+  const q         = (document.getElementById('reportSearch').value || '').trim().toLowerCase();
+
+  let filtered = [...reportData];
+
+  // Dept filter
+  if (dept) filtered = filtered.filter(r => (r.department||'') === dept);
+
+  // Search filter
+  if (q) filtered = filtered.filter(r =>
+    (r.name||'').toLowerCase().includes(q) ||
+    (r.emp_code||'').toLowerCase().includes(q)
+  );
+
+  // Attendance % filter
+  filtered = filtered.filter(r => {
+    const pct = Math.round(((r.present_days||0)+(r.late_days||0)) / reportWorkDays * 100);
+    if (attFilter === 'high') return pct >= 90;
+    if (attFilter === 'mid')  return pct >= 75 && pct < 90;
+    if (attFilter === 'low')  return pct < 75;
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    const pctA = Math.round(((a.present_days||0)+(a.late_days||0)) / reportWorkDays * 100);
+    const pctB = Math.round(((b.present_days||0)+(b.late_days||0)) / reportWorkDays * 100);
+    if (sort === 'att_desc')    return pctB - pctA;
+    if (sort === 'att_asc')     return pctA - pctB;
+    if (sort === 'hours_desc')  return (b.total_hours||0) - (a.total_hours||0);
+    if (sort === 'absent_desc') return (b.absent_days||0) - (a.absent_days||0);
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  const tbody = document.getElementById('reportTable');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No employees match filters</td></tr>';
+    document.getElementById('reportCount').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((r,i) => {
+    const pct = Math.round(((r.present_days||0)+(r.late_days||0)) / reportWorkDays * 100);
+    const c   = colors[i%colors.length];
+    const initials = (r.name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const pctColor = pct>=90 ? 'var(--accent)' : pct>=75 ? 'var(--accent3)' : 'var(--danger)';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:0.6rem">
+        <div class="emp-avatar" style="background:${c}20;color:${c};border:1px solid ${c}40;width:30px;height:30px;font-size:0.68rem">${initials}</div>
+        <div>
+          <div style="font-weight:500">${r.name}</div>
+          ${r.emp_code ? `<div style="font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace">${r.emp_code}</div>` : ''}
+        </div>
+      </div></td>
+      <td><span style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.72rem">${r.department||'—'}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent)">${r.present_days||0}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--accent3)">${r.late_days||0}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--danger)">${r.absent_days||0}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.total_hours||0}h</td>
+      <td style="font-family:'DM Mono',monospace;font-size:0.8rem">${r.avg_hours||0}h</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:50px">
+            <div style="height:100%;width:${Math.min(pct,100)}%;background:${pctColor};border-radius:3px"></div>
+          </div>
+          <span style="font-family:'DM Mono',monospace;font-size:0.78rem;color:${pctColor};min-width:36px">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Summary pills
+  const excellent = filtered.filter(r => Math.round(((r.present_days||0)+(r.late_days||0))/reportWorkDays*100) >= 90).length;
+  const atrisk    = filtered.filter(r => Math.round(((r.present_days||0)+(r.late_days||0))/reportWorkDays*100) < 75).length;
+  const sumEl = document.getElementById('reportSummary');
+  sumEl.style.display = 'flex';
+  sumEl.innerHTML = `
+    <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:0.4rem 0.85rem;font-family:'DM Mono',monospace;font-size:0.72rem">
+      Showing <strong style="color:var(--accent)">${filtered.length}</strong> of ${reportData.length} employees
+    </div>
+    <div style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:0.4rem 0.85rem;font-family:'DM Mono',monospace;font-size:0.72rem">
+      ✅ Excellent: <strong style="color:var(--accent)">${excellent}</strong>
+    </div>
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:0.4rem 0.85rem;font-family:'DM Mono',monospace;font-size:0.72rem">
+      ⚠️ At Risk: <strong style="color:var(--danger)">${atrisk}</strong>
+    </div>
+    <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:0.4rem 0.85rem;font-family:'DM Mono',monospace;font-size:0.72rem">
+      📅 Work Days: <strong style="color:var(--accent2)">${reportWorkDays}</strong>
+    </div>`;
+  document.getElementById('reportCount').textContent = `${filtered.length} employee${filtered.length!==1?'s':''} shown`;
+}
+
 function exportMonthlyCSV() {
   if (!reportData.length) { showToast('⚠️','Generate report first', true); return; }
+  const dept      = document.getElementById('reportDept').value;
+  const attFilter = document.getElementById('reportAttFilter').value;
+  const q         = (document.getElementById('reportSearch').value||'').trim().toLowerCase();
+  let filtered = [...reportData];
+  if (dept) filtered = filtered.filter(r => (r.department||'') === dept);
+  if (q)    filtered = filtered.filter(r => (r.name||'').toLowerCase().includes(q) || (r.emp_code||'').toLowerCase().includes(q));
+  filtered = filtered.filter(r => {
+    const pct = Math.round(((r.present_days||0)+(r.late_days||0)) / reportWorkDays * 100);
+    if (attFilter === 'high') return pct >= 90;
+    if (attFilter === 'mid')  return pct >= 75 && pct < 90;
+    if (attFilter === 'low')  return pct < 75;
+    return true;
+  });
   const rows = [
-    ['Employee','Department','Present','Late','Absent','Total Hours','Avg Hours/Day','Attendance %'],
-    ...reportData.map(r => {
-      const pct = Math.round(((r.present_days||0)+(r.late_days||0))/26*100);
-      return [r.name, r.department||'', r.present_days||0, r.late_days||0, r.absent_days||0, r.total_hours||0, r.avg_hours||0, pct+'%'];
+    ['Employee','Emp Code','Department','Present','Late','Absent','Total Hours','Avg Hours/Day','Attendance %'],
+    ...filtered.map(r => {
+      const pct = Math.round(((r.present_days||0)+(r.late_days||0))/reportWorkDays*100);
+      return [r.name, r.emp_code||'', r.department||'', r.present_days||0, r.late_days||0, r.absent_days||0, r.total_hours||0, r.avg_hours||0, pct+'%'];
     })
   ];
-  downloadCSV(rows, `monthly_report_${document.getElementById('reportMonth').value}.csv`);
-  showToast('⬇️','Monthly report exported!');
+  const month = document.getElementById('reportMonth').value;
+  downloadCSV(rows, `attendance_report_${month}${dept?'_'+dept:''}${q?'_search':''}${attFilter?'_'+attFilter:''}.csv`);
+  showToast('⬇️', `Report exported — ${filtered.length} employees`);
 }
 
 function downloadCSV(rows, filename) {
