@@ -429,6 +429,14 @@ canvas { display:none; }
 
 <script>
 const API   = 'https://trustwork-attendx.hf.space';
+
+// ── TENANT HEADER ──────────────────────────────────────────────────────────
+function tenantFetch(url, options) {
+  const slug = sessionStorage.getItem('tenantSlug') || 'trustwork';
+  options = options || {};
+  options.headers = Object.assign({ 'X-Tenant-Slug': slug }, options.headers || {});
+  return fetch(url, options);
+}
 const empId   = sessionStorage.getItem('employeeId');
 const empName = sessionStorage.getItem('employeeName');
 const empCode = sessionStorage.getItem('employeeCode');
@@ -475,7 +483,7 @@ let pendingType   = null;     // 'in' or 'out' — set when punch button clicked
 
 async function loadSysSettings() {
   try {
-    const res = await fetch(API + '/settings');
+    const res = await tenantFetch(API + '/settings');
     if (res.ok) sysSettings = await res.json();
   } catch(e) { console.warn('Could not load settings:', e); }
   buildMethodPicker();
@@ -801,7 +809,7 @@ async function submitPunch(type) {
 
     // Step 3: API call
     showProg(true, '💾 Saving…', 88);
-    const res  = await fetch(API + '/attendance/punch', {
+    const res  = await tenantFetch(API + '/attendance/punch', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
@@ -904,7 +912,7 @@ function updateTodayUI(type, timeStr) {
 // ── LOAD TODAY STATUS ──────────────────────────────────────────────────────
 async function loadTodayStatus() {
   try {
-    const res  = await fetch(API + '/attendance/today');
+    const res  = await tenantFetch(API + '/attendance/today');
     const data = await res.json();
     const mine = (data.logs||[]).find(l => l.employee_id === empId);
     if (!mine) return;
@@ -955,7 +963,7 @@ async function loadHistory() {
   const tbody = document.getElementById('histTable');
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Loading…</td></tr>';
   try {
-    const res     = await fetch(API + '/attendance/report/' + empId + '?month=' + month);
+    const res     = await tenantFetch(API + '/attendance/report/' + empId + '?month=' + month);
     const rawText = await res.text();
     let data = {};
     try { data = JSON.parse(rawText); } catch(e) { throw new Error('Server error — check Docker logs'); }
