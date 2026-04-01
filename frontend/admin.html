@@ -1052,6 +1052,17 @@ tr:hover td { background:rgba(255,255,255,0.02); }
 <script>
 const API_BASE = 'https://trustwork-attendx.hf.space';
 
+// ── TENANT HEADER ──────────────────────────────────────────────────────────
+function tenantFetch(url, options) {
+  const slug = sessionStorage.getItem('tenantSlug') || 'trustwork';
+  options = options || {};
+  options.headers = Object.assign({ 'X-Tenant-Slug': slug }, options.headers || {});
+  if (options.body && !options.headers['Content-Type']) {
+    options.headers['Content-Type'] = 'application/json';
+  }
+  return fetch(url, options);
+}
+
 // ── AUTH CHECK ────────────────────────────────────────────────────────────
 if (sessionStorage.getItem('adminAuth') !== 'true') {
   window.location.href = 'login.html';
@@ -1124,7 +1135,7 @@ async function saveSettings(section) {
   // Always load current DB settings first so we do a full upsert, not partial
   let current = {};
   try {
-    const r = await fetch(API_BASE + '/settings');
+    const r = await tenantFetch(API_BASE + '/settings');
     if (r.ok) current = await r.json();
   } catch(e) {}
 
@@ -1160,7 +1171,7 @@ async function saveSettings(section) {
   }
 
   try {
-    const res  = await fetch(API_BASE + '/settings', {
+    const res  = await tenantFetch(API_BASE + '/settings', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(current)
@@ -1179,7 +1190,7 @@ async function saveSettings(section) {
 
 async function loadSettings() {
   try {
-    const res = await fetch(API_BASE + '/settings');
+    const res = await tenantFetch(API_BASE + '/settings');
     if (!res.ok) return;
     const cfg = await res.json();
 
@@ -1259,7 +1270,7 @@ function showPage(id, btn) {
   if (id==='attendance') {
     // lightweight pre-fetch just for emp_code lookup — avoids firing all auth-status calls
     if (!allEmployees || !allEmployees.length) {
-      fetch(API_BASE + '/employees')
+      tenantFetch(API_BASE + '/employees')
         .then(r => r.ok ? r.json() : [])
         .then(data => { if (!allEmployees || !allEmployees.length) allEmployees = data; })
         .catch(() => {});
@@ -1273,7 +1284,7 @@ function showPage(id, btn) {
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 async function loadDashboard() {
   try {
-    const res  = await fetch(API_BASE + '/attendance/today');
+    const res  = await tenantFetch(API_BASE + '/attendance/today');
     const data = await res.json();
 
     document.getElementById('dPresent').textContent = data.present || 0;
@@ -1596,7 +1607,7 @@ async function openManualPunchModal() {
   // coming directly to Attendance tab without visiting Employees tab first)
   if (!allEmployees || !allEmployees.length) {
     try {
-      const r = await fetch(API_BASE + '/employees');
+      const r = await tenantFetch(API_BASE + '/employees');
       if (r.ok) allEmployees = await r.json();
     } catch(_) {}
   }
@@ -1639,7 +1650,7 @@ async function saveManualPunch() {
   const punchTimeIST = date + 'T' + time + ':00+05:30';
 
   try {
-    const res  = await fetch(API_BASE + '/attendance/admin-punch', {
+    const res  = await tenantFetch(API_BASE + '/attendance/admin-punch', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -1697,7 +1708,7 @@ async function openWfhModal(id, name) {
 
   // Load current settings
   try {
-    const res  = await fetch(API_BASE + '/employees/' + id + '/geo-settings');
+    const res  = await tenantFetch(API_BASE + '/employees/' + id + '/geo-settings');
     if (res.ok) {
       const data = await res.json();
       const hasWfh = data.allow_wfh === true;
@@ -1740,7 +1751,7 @@ async function saveWfhSettings() {
   const addr   = document.getElementById('wfh_address').value.trim();
 
   try {
-    const res  = await fetch(API_BASE + '/employees/' + wfhEmpId + '/geo-settings', {
+    const res  = await tenantFetch(API_BASE + '/employees/' + wfhEmpId + '/geo-settings', {
       method:  'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -2181,7 +2192,7 @@ async function addEmployee() {
   };
 
   try {
-    const res  = await fetch(API_BASE + '/employees', {
+    const res  = await tenantFetch(API_BASE + '/employees', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
     const data = await res.json();
@@ -2280,7 +2291,7 @@ async function epFingerSave() {
   const btn = document.getElementById('epFingerSaveBtn');
   btn.disabled = true; btn.textContent = '⏳ Enrolling…';
   try {
-    const res  = await fetch(API_BASE + '/finger/register', {
+    const res  = await tenantFetch(API_BASE + '/finger/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: epCurrentId, template: epFingerTemplate})
     });
@@ -2290,7 +2301,7 @@ async function epFingerSave() {
       document.getElementById('epFingerDeleteBtn').style.display = 'block';
       showToast('✅', document.getElementById('epName').textContent + ' fingerprint enrolled!');
       try {
-        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        const ar = await tenantFetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
         if (ar.ok) { const auth = await ar.json(); epAuthCache[epCurrentId] = auth; }
       } catch(_) {}
       await loadEnrollmentList();
@@ -2303,7 +2314,7 @@ async function epFingerSave() {
 async function epFingerDelete() {
   if (!epCurrentId || !confirm('Remove fingerprint for ' + document.getElementById('epName').textContent + '?')) return;
   try {
-    const res = await fetch(API_BASE + '/finger/delete/' + epCurrentId, {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/finger/delete/' + epCurrentId, {method:'DELETE'});
     if (res.ok) {
       document.getElementById('epFingerSuccess').style.display = 'none';
       document.getElementById('epFingerDeleteBtn').style.display = 'none';
@@ -2323,7 +2334,7 @@ async function epPinSave() {
   if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) { msg.textContent = '✗ Must be 6 digits'; msg.style.color='var(--danger)'; return; }
   if (pin !== conf) { msg.textContent = '✗ PINs do not match'; msg.style.color='var(--danger)'; return; }
   try {
-    const res  = await fetch(API_BASE + '/employees/set-pin', {
+    const res  = await tenantFetch(API_BASE + '/employees/set-pin', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: epCurrentId, pin})
     });
@@ -2336,7 +2347,7 @@ async function epPinSave() {
       msg.textContent = '';
       showToast('✅', document.getElementById('epName').textContent + ' PIN set!');
       try {
-        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        const ar = await tenantFetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
         if (ar.ok) { const auth = await ar.json(); epAuthCache[epCurrentId] = auth; }
       } catch(_) {}
       loadEnrollmentList();
@@ -2346,7 +2357,7 @@ async function epPinSave() {
 async function epPinClear() {
   if (!epCurrentId || !confirm('Clear PIN?')) return;
   try {
-    const res = await fetch(API_BASE + '/employees/' + epCurrentId + '/pin', {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/employees/' + epCurrentId + '/pin', {method:'DELETE'});
     if (res.ok) {
       document.getElementById('epPinSuccess').style.display = 'none';
       document.getElementById('epPinClearBtn').style.display = 'none';
@@ -2372,7 +2383,7 @@ async function emFingerSave() {
   const btn = document.getElementById('emFingerSaveBtn');
   btn.disabled = true; btn.textContent = '⏳ Enrolling…';
   try {
-    const res  = await fetch(API_BASE + '/finger/register', {
+    const res  = await tenantFetch(API_BASE + '/finger/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: enrollEmpId, template: emFingerTemplate})
     });
@@ -2390,7 +2401,7 @@ async function emFingerSave() {
 async function emFingerDelete() {
   if (!enrollEmpId || !confirm('Remove fingerprint for ' + enrollEmpName + '?')) return;
   try {
-    const res = await fetch(API_BASE + '/finger/delete/' + enrollEmpId, {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/finger/delete/' + enrollEmpId, {method:'DELETE'});
     if (res.ok) {
       document.getElementById('emFingerSuccess').style.display = 'none';
       document.getElementById('emFingerDeleteBtn').style.display = 'none';
@@ -2409,7 +2420,7 @@ async function emPinSave() {
   if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) { msg.textContent = '✗ Must be 6 digits'; msg.style.color='var(--danger)'; return; }
   if (pin !== conf) { msg.textContent = '✗ PINs do not match'; msg.style.color='var(--danger)'; return; }
   try {
-    const res  = await fetch(API_BASE + '/employees/set-pin', {
+    const res  = await tenantFetch(API_BASE + '/employees/set-pin', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: enrollEmpId, pin})
     });
@@ -2427,7 +2438,7 @@ async function emPinSave() {
 async function emPinClear() {
   if (!enrollEmpId || !confirm('Clear PIN for ' + enrollEmpName + '?')) return;
   try {
-    const res = await fetch(API_BASE + '/employees/' + enrollEmpId + '/pin', {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/employees/' + enrollEmpId + '/pin', {method:'DELETE'});
     if (res.ok) {
       document.getElementById('emPinSuccess').style.display = 'none';
       document.getElementById('emPinClearBtn').style.display = 'none';
@@ -2450,8 +2461,8 @@ let epAuthCache = {};
 async function loadEnrollmentList() {
   try {
     const [empRes, faceRes] = await Promise.all([
-      fetch(API_BASE + '/employees'),
-      fetch(API_BASE + '/face/list')
+      tenantFetch(API_BASE + '/employees'),
+      tenantFetch(API_BASE + '/face/list')
     ]);
     epAllEmps = empRes.ok ? await empRes.json() : [];
     const enrolled = faceRes.ok ? await faceRes.json() : [];
@@ -2461,7 +2472,7 @@ async function loadEnrollmentList() {
     epAuthCache = {};
     await Promise.all(epAllEmps.map(async e => {
       try {
-        const r = await fetch(API_BASE + '/employees/' + e.id + '/auth-status');
+        const r = await tenantFetch(API_BASE + '/employees/' + e.id + '/auth-status');
         if (r.ok) epAuthCache[e.id] = await r.json();
       } catch(_) {}
     }));
@@ -2576,7 +2587,7 @@ async function selectEpEmployee(id, name, code, dept, isEnrolled, color) {
 
   // Load current auth status — update icons + reflect in tabs
   try {
-    const r = await fetch(API_BASE + '/employees/' + id + '/auth-status');
+    const r = await tenantFetch(API_BASE + '/employees/' + id + '/auth-status');
     if (r.ok) {
       const auth = await r.json();
       // Update status icons in panel header
@@ -2680,7 +2691,7 @@ async function epSave() {
   const btn = document.getElementById('epSaveBtn');
   btn.disabled = true; btn.textContent = '⏳ Enrolling…';
   try {
-    const res  = await fetch(API_BASE + '/face/register', {
+    const res  = await tenantFetch(API_BASE + '/face/register', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: epCurrentId, image_base64: epShots[0]})
     });
@@ -2693,7 +2704,7 @@ async function epSave() {
       showToast('✅', document.getElementById('epName').textContent + ' face enrolled!');
       // Refresh auth icons
       try {
-        const ar = await fetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
+        const ar = await tenantFetch(API_BASE + '/employees/' + epCurrentId + '/auth-status');
         if (ar.ok) {
           const auth = await ar.json();
           epAuthCache[epCurrentId] = auth;
@@ -2722,7 +2733,7 @@ async function epDelete() {
   const name = document.getElementById('epName').textContent;
   if (!confirm('Remove face enrollment for ' + name + '?')) return;
   try {
-    const res = await fetch(API_BASE + '/face/delete/' + epCurrentId, {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/face/delete/' + epCurrentId, {method:'DELETE'});
     if (res.ok) {
       epIsEnrolled = false;
       epShots = []; renderEpShots();
@@ -2814,7 +2825,7 @@ async function openEnrollModal(id, name, code, dept, isEnrolled, color) {
 
   // Load current auth status for finger/PIN (non-blocking)
   try {
-    const r = await fetch(API_BASE + '/employees/' + enrollEmpId + '/auth-status');
+    const r = await tenantFetch(API_BASE + '/employees/' + enrollEmpId + '/auth-status');
     if (r.ok) {
       const auth = await r.json();
       if (auth.finger_enrolled) {
@@ -2910,7 +2921,7 @@ async function saveEnrollment() {
   // Use the first/best shot
   const img = enrollShots[0];
   try {
-    const res  = await fetch(API_BASE + '/face/register', {
+    const res  = await tenantFetch(API_BASE + '/face/register', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({employee_id: enrollEmpId, image_base64: img})
@@ -2942,7 +2953,7 @@ async function deleteEnrollment() {
   if (!enrollEmpId) return;
   if (!confirm('Remove face enrollment for ' + enrollEmpName + '?')) return;
   try {
-    const res = await fetch(API_BASE + '/face/delete/' + enrollEmpId, {method:'DELETE'});
+    const res = await tenantFetch(API_BASE + '/face/delete/' + enrollEmpId, {method:'DELETE'});
     if (res.ok) {
       document.getElementById('enrollResult').style.display = 'none';
       document.getElementById('enrollDeleteBtn').style.display = 'none';
