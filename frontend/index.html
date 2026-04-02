@@ -626,8 +626,12 @@ function pinPress(digit) {
   if (pinValue.length >= PIN_LEN) return;
   pinValue += digit;
   updatePinDots();
-  if (pinValue.length === PIN_LEN && pendingType) {
-    // Auto-submit when all 6 digits entered
+  if (pinValue.length === PIN_LEN) {
+    // Auto-detect punch type from UI if not already set
+    if (!pendingType) {
+      const btnOut = document.getElementById('btnOut');
+      pendingType = (btnOut && btnOut.style.display !== 'none') ? 'out' : 'in';
+    }
     setTimeout(() => submitPunch(pendingType), 200);
   }
 }
