@@ -1383,7 +1383,7 @@ async function init() {
 let departments = [];
 async function loadDepartments() {
   try {
-    const res = await fetch(`${API_BASE}/departments`);
+    const res = await tenantFetch(`${API_BASE}/departments`);
     if (!res.ok) {
       // fallback hardcoded
       departments = ['Engineering','HR','Finance','Marketing','Operations'];
@@ -1423,9 +1423,9 @@ let authStatusCache = {};
 async function loadEmployees() {
   try {
     const [empRes, faceRes, todayRes] = await Promise.all([
-      fetch(`${API_BASE}/employees`),
-      fetch(`${API_BASE}/face/list`),
-      fetch(`${API_BASE}/attendance/today`)
+      tenantFetch(`${API_BASE}/employees`),
+      tenantFetch(`${API_BASE}/face/list`),
+      tenantFetch(`${API_BASE}/attendance/today`)
     ]);
 
     allEmployees = empRes.ok ? await empRes.json() : [];
@@ -1441,7 +1441,7 @@ async function loadEmployees() {
     authStatusCache = {};
     await Promise.all(allEmployees.map(async e => {
       try {
-        const r = await fetch(`${API_BASE}/employees/${e.id}/auth-status`);
+        const r = await tenantFetch(`${API_BASE}/employees/${e.id}/auth-status`);
         if (r.ok) authStatusCache[e.id] = await r.json();
       } catch(_) {}
     }));
@@ -1599,7 +1599,7 @@ function closeDelModal() { document.getElementById('delModal').classList.remove(
 async function confirmDelete() {
   if (!deletingId) return;
   try {
-    const res  = await fetch(`${API_BASE}/employees/${deletingId}`, { method:'DELETE' });
+    const res  = await tenantFetch(`${API_BASE}/employees/${deletingId}`, { method:'DELETE' });
     const data = await res.json();
     if (res.ok && data.success) {
       showToast('✅','Employee deleted successfully');
@@ -1811,7 +1811,7 @@ async function loadAttendance() {
   const tbody = document.getElementById('attTable');
   tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">⏳ Loading…</td></tr>';
   try {
-    const res  = await fetch(`${API_BASE}/attendance/date/${date}`);
+    const res  = await tenantFetch(`${API_BASE}/attendance/date/${date}`);
     const data = await res.json();
     attData = data.logs || [];
 
@@ -1907,7 +1907,7 @@ async function confirmAttDelete() {
   const btn = document.getElementById('attDelConfirmBtn');
   btn.disabled = true; btn.textContent = '⏳ Deleting…';
   try {
-    const res  = await fetch(`${API_BASE}/attendance/${deletingAttId}`, { method: 'DELETE' });
+    const res  = await tenantFetch(`${API_BASE}/attendance/${deletingAttId}`, { method: 'DELETE' });
     const data = await res.json();
     if (res.ok && data.success) {
       showToast('✅', 'Attendance record deleted');
@@ -1972,7 +1972,7 @@ async function loadReport() {
   document.getElementById('reportCount').textContent = '';
   document.getElementById('reportSummary').style.display = 'none';
   try {
-    const res = await fetch(`${API_BASE}/attendance/monthly?month=${month}`);
+    const res = await tenantFetch(`${API_BASE}/attendance/monthly?month=${month}`);
     reportData = res.ok ? await res.json() : [];
     if (!reportData.length) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-family:DM Mono,monospace">No data for this month</td></tr>';
@@ -2143,7 +2143,7 @@ function changePin() {
 
 async function checkSystem() {
   try {
-    const res  = await fetch(`${API_BASE}/health`);
+    const res  = await tenantFetch(`${API_BASE}/health`);
     const data = await res.json();
     document.getElementById('sysApi').textContent   = '● ONLINE';
     document.getElementById('sysApi').style.color   = 'var(--accent)';
@@ -2156,7 +2156,7 @@ async function checkSystem() {
     document.getElementById('sysApi').style.color = 'var(--danger)';
   }
   try {
-    const r2 = await fetch(`${API_BASE}/attendance/today`);
+    const r2 = await tenantFetch(`${API_BASE}/attendance/today`);
     const d2 = await r2.json();
     document.getElementById('sysRecords').textContent = `${d2.present||0} present today`;
   } catch(e) {}
@@ -3001,7 +3001,7 @@ async function openSetPinModal(id, name) {
   document.getElementById('setPinModal').classList.add('show');
 
   try {
-    const res  = await fetch(`${API_BASE}/employees/${id}/auth-status`);
+    const res  = await tenantFetch(`${API_BASE}/employees/${id}/auth-status`);
     if (res.ok) {
       const d = await res.json();
       if (d.pin_set) {
@@ -3039,7 +3039,7 @@ async function saveEmpPin() {
   btn.disabled = true; btn.textContent = '⏳ Setting PIN…';
 
   try {
-    const res  = await fetch(`${API_BASE}/employees/set-pin`, {
+    const res  = await tenantFetch(`${API_BASE}/employees/set-pin`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ employee_id: setPinEmpId, pin })
@@ -3062,7 +3062,7 @@ async function clearEmpPin() {
   if (!setPinEmpId) return;
   if (!confirm('Clear PIN for this employee? They will not be able to use PIN punch until a new PIN is set.')) return;
   try {
-    const res  = await fetch(`${API_BASE}/employees/${setPinEmpId}/pin`, { method: 'DELETE' });
+    const res  = await tenantFetch(`${API_BASE}/employees/${setPinEmpId}/pin`, { method: 'DELETE' });
     const data = await res.json();
     if (res.ok && data.success) {
       showToast('✅', 'PIN cleared');
