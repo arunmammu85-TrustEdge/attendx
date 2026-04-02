@@ -526,7 +526,7 @@ function buildMethodPicker() {
   const labels = { face:'Face', thumb:'Fingerprint', pin:'PIN' };
   const icons  = { face:'📷', thumb:'👆', pin:'🔢' };
   btns.innerHTML = methods.map(m =>
-    `<button class="method-btn${m===activeMethod?' active':''}" onclick="selectMethod('${m}')">
+    `<button class="method-btn${m===activeMethod?' active':''}" data-method="${m}" onclick="selectMethod('${m}')">
       <span class="m-icon">${icons[m]}</span>${labels[m]}
     </button>`
   ).join('');
@@ -537,11 +537,9 @@ function buildMethodPicker() {
 function selectMethod(method) {
   activeMethod = method;
 
-  // Update picker button states
+  // Update picker button states using data-method attribute
   document.querySelectorAll('.method-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.trim().toLowerCase().startsWith(
-      method === 'face' ? 'face' : method === 'thumb' ? 'finger' : 'pin'
-    ));
+    b.classList.toggle('active', b.dataset.method === method);
   });
 
   // Show/hide auth UIs
@@ -860,7 +858,10 @@ async function submitPunch(type) {
 
     if (res.ok && data.success) {
       // Clear PIN and reset pending type after success
-      if (activeMethod === 'pin') pinClear();
+      if (activeMethod === 'pin') {
+        pinClear();
+        document.getElementById('pinMsg').textContent = '';
+      }
       fingerTemplate = null;
       pendingType = null;
 
