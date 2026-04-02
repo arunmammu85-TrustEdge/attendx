@@ -788,6 +788,27 @@ async function submitPunch(type) {
   document.getElementById('errorBox').classList.remove('show');
 
   try {
+    // Early check for PIN — if button state already shows punched, skip GPS
+    if (activeMethod === 'pin') {
+      const btnIn  = document.getElementById('btnIn');
+      const btnOut = document.getElementById('btnOut');
+      const btnDone = document.getElementById('btnDone');
+      if (type === 'in' && btnIn.style.display === 'none') {
+        pendingType = null; pinClear();
+        document.getElementById('pinMsg').textContent = 'Already punched in ✅';
+        btnIn.disabled = false; btnOut.disabled = false;
+        toast('ℹ️', 'Already punched in — use Punch Out when leaving');
+        return;
+      }
+      if (type === 'out' && btnDone.style.display === 'block') {
+        pendingType = null; pinClear();
+        document.getElementById('pinMsg').textContent = 'Attendance complete for today ✅';
+        btnIn.disabled = false; btnOut.disabled = false;
+        toast('✅', 'Attendance already complete for today!');
+        return;
+      }
+    }
+
     // Step 1: GPS — required for all methods
     showProg(true, '📍 Getting location…', 20);
     const coords = await getGPSCoords();
@@ -836,9 +857,10 @@ async function submitPunch(type) {
     showProg(false);
 
     if (res.ok && data.success) {
-      // Clear PIN after success
+      // Clear PIN and reset pending type after success
       if (activeMethod === 'pin') pinClear();
       fingerTemplate = null;
+      pendingType = null;
 
       document.getElementById('successBox').classList.add('show');
       document.getElementById('successTitle').textContent = type === 'in' ? '✅ Punched In!' : '✅ Punched Out!';
@@ -874,17 +896,21 @@ async function submitPunch(type) {
       }
 
       if (code === 'ALREADY_PUNCHED_IN') {
+        pendingType = null;
         document.getElementById('btnIn').style.display  = 'none';
         document.getElementById('btnOut').style.display = 'block';
         document.getElementById('btnOut').disabled = false;
         toast('ℹ️','Already punched in — click Punch Out when leaving');
+        if (activeMethod === 'pin') { pinClear(); document.getElementById('pinMsg').textContent = 'Already punched in ✅'; }
         loadTodayStatus();
         return;
       }
       if (code === 'ALREADY_PUNCHED_OUT') {
+        pendingType = null;
         document.getElementById('btnOut').style.display  = 'none';
         document.getElementById('btnDone').style.display = 'block';
         toast('✅','Attendance already complete for today!');
+        if (activeMethod === 'pin') pinClear();
         loadTodayStatus();
         return;
       }
