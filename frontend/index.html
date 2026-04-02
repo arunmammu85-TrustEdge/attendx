@@ -491,23 +491,33 @@ function doLogout() { sessionStorage.clear(); window.location.href = 'login.html
 
 // ── SETTINGS CACHE ────────────────────────────────────────────────────────
 let sysSettings   = {};
+let empAuthStatus = {};       // employee's own enrollment status
 let activeMethod  = 'face';   // currently selected auth method
 let pendingType   = null;     // 'in' or 'out' — set when punch button clicked
 
 async function loadSysSettings() {
   try {
-    const res = await tenantFetch(API + '/settings');
-    if (res.ok) sysSettings = await res.json();
+    const [settingsRes, authRes] = await Promise.all([
+      tenantFetch(API + '/settings'),
+      tenantFetch(API + '/employees/' + empId + '/auth-status')
+    ]);
+    if (settingsRes.ok) sysSettings   = await settingsRes.json();
+    if (authRes.ok)     empAuthStatus = await authRes.json();
   } catch(e) { console.warn('Could not load settings:', e); }
   buildMethodPicker();
 }
 
 function enabledMethods() {
   const m = [];
-  if (sysSettings.face_enabled !== false)        m.push('face');
-  if (sysSettings.fingerprint_enabled === true)  m.push('thumb');
-  if (sysSettings.pin_enabled === true)          m.push('pin');
-  return m.length ? m : ['face'];  // fallback: always show face
+  // Only show methods that are BOTH globally enabled AND employee is enrolled for
+  if (sysSettings.face_enabled !== false && empAuthStatus.face_enrolled)
+    m.push('face');
+  if (sysSettings.fingerprint_enabled === true && empAuthStatus.finger_enrolled)
+    m.push('thumb');
+  if (sysSettings.pin_enabled === true && empAuthStatus.pin_set)
+    m.push('pin');
+  // Fallback: if nothing enrolled yet, show face so they're not locked out
+  return m.length ? m : ['face'];
 }
 
 function buildMethodPicker() {
