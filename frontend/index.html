@@ -790,21 +790,23 @@ async function submitPunch(type) {
   try {
     // Early check for PIN — if button state already shows punched, skip GPS
     if (activeMethod === 'pin') {
-      const btnIn  = document.getElementById('btnIn');
-      const btnOut = document.getElementById('btnOut');
+      const btnIn   = document.getElementById('btnIn');
+      const btnOut  = document.getElementById('btnOut');
       const btnDone = document.getElementById('btnDone');
+      // Check attendance complete FIRST (btnDone visible covers both in+out done)
+      if (btnDone.style.display === 'block') {
+        pendingType = null; pinClear();
+        document.getElementById('pinMsg').textContent = 'Attendance complete for today ✅';
+        btnIn.disabled = false; btnOut.disabled = false;
+        toast('✅', 'Attendance already complete for today!');
+        return;
+      }
+      // Then check already punched in
       if (type === 'in' && btnIn.style.display === 'none') {
         pendingType = null; pinClear();
         document.getElementById('pinMsg').textContent = 'Already punched in ✅';
         btnIn.disabled = false; btnOut.disabled = false;
         toast('ℹ️', 'Already punched in — use Punch Out when leaving');
-        return;
-      }
-      if (type === 'out' && btnDone.style.display === 'block') {
-        pendingType = null; pinClear();
-        document.getElementById('pinMsg').textContent = 'Attendance complete for today ✅';
-        btnIn.disabled = false; btnOut.disabled = false;
-        toast('✅', 'Attendance already complete for today!');
         return;
       }
     }
