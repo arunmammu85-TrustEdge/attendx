@@ -890,6 +890,13 @@ async function submitPunch(type) {
       } else {
         document.getElementById('btnOut').style.display  = 'none';
         document.getElementById('btnDone').style.display = 'block';
+        // Hide all auth UI after punch-out
+        attendanceComplete = true;
+        if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+        document.getElementById('camBox').classList.remove('show');
+        document.getElementById('methodPicker').classList.remove('show');
+        document.getElementById('pinPad').classList.remove('show');
+        document.getElementById('fpPrompt').classList.remove('show');
       }
     } else {
       showProg(false);
@@ -900,7 +907,29 @@ async function submitPunch(type) {
       if (activeMethod === 'pin') {
         pinError();
         document.getElementById('pinMsg').textContent = msg;
-        if (code !== 'PIN_LOCKED') {
+        if (code === 'PIN_LOCKED') {
+          // Disable PIN keys and show countdown
+          document.querySelectorAll('.pin-key-emp').forEach(k => k.disabled = true);
+          document.getElementById('pinMsg').style.color = 'var(--danger)';
+          // Countdown timer — re-enable after 15 mins
+          let remaining = 15 * 60;
+          const countdown = setInterval(() => {
+            remaining--;
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            document.getElementById('pinMsg').textContent =
+              `🔒 Locked — try again in ${m}:${s.toString().padStart(2,'0')}`;
+            if (remaining <= 0) {
+              clearInterval(countdown);
+              document.querySelectorAll('.pin-key-emp').forEach(k => k.disabled = false);
+              document.getElementById('pinMsg').textContent = 'Account unlocked. Enter your PIN.';
+              document.getElementById('pinMsg').style.color = 'var(--accent)';
+              document.getElementById('btnIn').disabled  = false;
+              document.getElementById('btnOut').disabled = false;
+              pinClear();
+            }
+          }, 1000);
+        } else {
           document.getElementById('btnIn').disabled  = false;
           document.getElementById('btnOut').disabled = false;
         }
@@ -985,10 +1014,13 @@ async function loadTodayStatus() {
       document.getElementById('btnIn').style.display   = 'none';
       document.getElementById('btnOut').style.display  = 'none';
       document.getElementById('btnDone').style.display = 'block';
-      // Attendance complete — stop camera, no need for it
+      // Attendance complete — hide all auth UI
       attendanceComplete = true;
       if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
       document.getElementById('camBox').classList.remove('show');
+      document.getElementById('methodPicker').classList.remove('show');
+      document.getElementById('pinPad').classList.remove('show');
+      document.getElementById('fpPrompt').classList.remove('show');
     } else if (mine.punch_in_time) {
       document.getElementById('btnIn').style.display  = 'none';
       document.getElementById('btnOut').style.display = 'block';
