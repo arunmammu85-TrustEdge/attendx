@@ -521,6 +521,9 @@ function enabledMethods() {
 }
 
 function buildMethodPicker() {
+  // Don't show any auth UI if attendance is already complete
+  if (attendanceComplete) return;
+
   const methods = enabledMethods();
   const picker  = document.getElementById('methodPicker');
   const btns    = document.getElementById('methodBtns');
